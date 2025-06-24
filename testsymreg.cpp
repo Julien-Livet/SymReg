@@ -5,14 +5,16 @@ class TestSymReg : public QObject
     Q_OBJECT
 
     private slots:
-        void test();
+        void testBinaryOperator();
+        void testLinearFit();
+        void testUnaryOperator();
 };
 
 #include <iostream>
 
 #include "SymbolicRegressor.h"
 
-void TestSymReg::test()
+void TestSymReg::testUnaryOperator()
 {
     Eigen::ArrayXd x(7);
     x << 0, 1, 2, 3, 4, 5, 6;
@@ -33,10 +35,23 @@ void TestSymReg::test()
         logVar.applyParams(params);
     }
 
+    auto const y{1 * Eigen::log(1 * x + 1) + 0};
+    auto const r{logVar.eval()};
+
+    for (int i{0}; i < y.size(); ++i)
+        QVERIFY(std::abs(y[i] - r[i]) < 1e-6);
+/*
     std::cout << logVar.str() << std::endl;
     std::cout << logVar.opt_str() << std::endl;
-    std::cout << logVar.eval().transpose() << std::endl;
+    std::cout << logVar.eval().transpose() << std::endl;*/
+}
 
+void TestSymReg::testBinaryOperator()
+{
+    Eigen::ArrayXd x(7);
+    x << 0, 1, 2, 3, 4, 5, 6;
+
+    Variable var("x", x);
     auto var_bis(var);
 
     Expression<double> addVars{BinaryOperator<double>::plus(), var, var_bis};
@@ -45,6 +60,7 @@ void TestSymReg::test()
         e.b = 1;
         addVars.operand1() = e;
     }
+
     {
         auto e{std::any_cast<Expression<double> >(addVars.operand2())};
         e.a = 2;
@@ -61,25 +77,29 @@ void TestSymReg::test()
         addVars.applyParams(params);
     }
 
+    auto const y{1*((1*x+1)+(2*x+4))};
+    auto const r{addVars.eval()};
+
+    for (int i{0}; i < y.size(); ++i)
+        QVERIFY(std::abs(y[i] - r[i]) < 1e-6);
+/*
     std::cout << addVars.str() << std::endl;
     std::cout << addVars.opt_str() << std::endl;
-    std::cout << addVars.eval().transpose() << std::endl;
+    std::cout << addVars.eval().transpose() << std::endl;*/
+}
 
-    Eigen::ArrayXd x1(7);
-    x1.setRandom();
-    Eigen::ArrayXd x2(x1.size());
-    x2.setRandom();
+void TestSymReg::testLinearFit()
+{
+    srand(time(0));
+
+    Eigen::ArrayXd x(7);
+    x.setRandom();
 
     using Var = Variable<double>;
-    using UnOp = UnaryOperator<double>;
-    using BinOp = BinaryOperator<double>;
 
-    SymbolicRegressor sr{std::vector<Var>{Var("x1", x1)/*, Var("x1", x2)*/},
-                         std::vector<UnOp>{UnOp::log(), UnOp::exp()},
-                         std::vector<BinOp>{BinOp::plus(), BinOp::times()}};
+    SymbolicRegressor sr{std::vector<Var>{Var("x", x)}};
 
-    //auto const y(x1 + x2);
-    auto const y(2 * x1 + 3);
+    auto const y(2 * x + 3);
 
     sr.fit(y);
 }

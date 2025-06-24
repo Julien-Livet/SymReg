@@ -213,7 +213,7 @@ class Expression
 
             return summary.final_cost;
         }
-        
+
     private:
         std::any operand1_; //Variable<T> or Expression
         std::any operand2_; //0 or valid operand
@@ -233,7 +233,7 @@ struct UnderlyingScalar<ceres::Jet<T, N>> {
 template <typename T>
 struct Residual
 {
-    Residual(Expression<T>& expression,
+    Residual(Expression<T> const& expression,
              Eigen::Array<double, Eigen::Dynamic, 1> const& y)
         : expression_{expression}, y_{y}
     {
@@ -266,7 +266,7 @@ struct Residual
     }
 
     private:
-        Expression<T>& expression_;
+        Expression<T> expression_;
         const Eigen::Array<double, Eigen::Dynamic, 1> y_;
 };
 
