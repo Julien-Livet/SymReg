@@ -101,7 +101,15 @@ void TestSymReg::testLinearFit()
 
     auto const y(2 * x + 3);
 
-    sr.fit(y);
+    auto const p{sr.fit(y)};
+
+    QVERIFY(p.first < 1e-6);
+
+    std::vector<double> params;
+    p.second.params(params);
+
+    QVERIFY(std::abs(params[0] - 2) < 1e-6);
+    QVERIFY(std::abs(params[1] - 3) < 1e-6);
 }
 
 QTEST_MAIN(TestSymReg)

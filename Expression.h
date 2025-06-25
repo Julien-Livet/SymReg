@@ -23,7 +23,10 @@ class Expression
     public:
         T a{1};
         T b{0};
-    
+
+        ceres::Jet<T, 4> ja;
+        ceres::Jet<T, 4> jb;
+
         Expression(Variable<T> const& variable) : operand1_{variable}, operand2_{0}, op_{0}
         {
         }
@@ -45,6 +48,16 @@ class Expression
                 return a * std::any_cast<UnaryOperator<T> >(op_).op()(std::any_cast<Expression>(operand1_).eval()) + b;
             else// if (op_.type() == typeid(BinaryOperator<T>))
                 return a * std::any_cast<BinaryOperator<T> >(op_).op()(std::any_cast<Expression>(operand1_).eval(), std::any_cast<Expression>(operand2_).eval()) + b;
+        }
+
+        Eigen::Array<ceres::Jet<T, 4>, Eigen::Dynamic, 1> evalJets() const
+        {
+            if (op_.type() == typeid(int))
+                return ja * std::any_cast<Variable<T> >(operand1_).value() + jb;
+            else if (op_.type() == typeid(UnaryOperator<T>))
+                return ja * std::any_cast<UnaryOperator<T> >(op_).op()(std::any_cast<Expression>(operand1_).eval()) + jb;
+            else// if (op_.type() == typeid(BinaryOperator<T>))
+                return ja * std::any_cast<BinaryOperator<T> >(op_).op()(std::any_cast<Expression>(operand1_).eval(), std::any_cast<Expression>(operand2_).eval()) + jb;
         }
 
         std::string str() const
@@ -69,7 +82,7 @@ class Expression
             
             return s;
         }
-        
+
         std::string opt_str() const
         {
             std::string s;
@@ -151,6 +164,19 @@ class Expression
                 std::any_cast<Expression>(operand2_).params(params);
         }
 
+        template <typename Container>
+        void jets(Container& params) const
+        {
+            params.emplace_back(ja);
+            params.emplace_back(jb);
+
+            if (operand1_.type() == typeid(Expression))
+                std::any_cast<Expression>(operand1_).jets(params);
+
+            if (operand2_.type() == typeid(Expression))
+                std::any_cast<Expression>(operand2_).jets(params);
+        }
+
         std::vector<T> applyParams(std::vector<T> const& params)
         {
             a = params[0];
@@ -169,6 +195,31 @@ class Expression
             {
                 auto e{std::any_cast<Expression>(operand2_)};
                 p = e.applyParams(p);
+                operand2_ = e;
+            }
+
+            return p;
+        }
+
+        template <typename Container>
+        Container applyJets(Container const& params)
+        {
+            ja = params[0];
+            jb = params[1];
+
+            Container p{params.begin() + 2, params.end()};
+
+            if (operand1_.type() == typeid(Expression))
+            {
+                auto e{std::any_cast<Expression>(operand1_)};
+                p = e.applyJets(p);
+                operand1_ = e;
+            }
+
+            if (operand2_.type() == typeid(Expression))
+            {
+                auto e{std::any_cast<Expression>(operand2_)};
+                p = e.applyJets(p);
                 operand2_ = e;
             }
 
@@ -198,18 +249,13 @@ class Expression
 
             ceres::Solver::Options options;
             options.linear_solver_type = ceres::DENSE_QR;
-            options.minimizer_progress_to_stdout = true;
 
             ceres::Solver::Summary summary;
             ceres::Solve(options, &problem, &summary);
 
-            applyParams(params);
+            delete cost;
 
-            std::cout << summary.BriefReport() << "\n";
-            for (auto const& v: params)
-                std::cout << v << " ";
-            std::cout << std::endl;
-            std::cout << summary.final_cost << std::endl;
+            applyParams(params);
 
             return summary.final_cost;
         }
@@ -244,23 +290,36 @@ struct Residual
     {
         using Scalar = typename UnderlyingScalar<S>::type;
 
-        std::vector<Scalar> params;
-        expression_.params(params);
-
-        for (size_t i{0}; i < params.size(); ++i)
+        if constexpr (typeid(S) == typeid(T))
         {
-            if constexpr (typeid(S) == typeid(T))
+            std::vector<Scalar> params;
+            expression_.params(params);
+
+            for (size_t i{0}; i < params.size(); ++i)
                 params[i] = *p[i];
-            else
-                params[i] = p[i]->a;
+
+            expression_.applyParams(params);
+
+            auto const x{expression_.eval()};
+
+            for (int i{0}; i < x.size(); ++i)
+                residual[i] = S(y_[i]) - S(x[i]);
         }
+        else
+        {
+            std::vector<S> jets;
+            expression_.jets(jets);
 
-        expression_.applyParams(params);
+            for (size_t i{0}; i < jets.size(); ++i)
+                jets[i] = *p[i];
 
-        auto const x{expression_.eval()};
+            expression_.applyJets(jets);
 
-        for (int i{0}; i < x.size(); ++i)
-            residual[i] = S(y_[i]) - S(x[i]);
+            auto const x{expression_.evalJets()};
+
+            for (int i{0}; i < x.size(); ++i)
+                residual[i] = S(y_[i]) - S(x[i]);
+        }
 
         return true;
     }
