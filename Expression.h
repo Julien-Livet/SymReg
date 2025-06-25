@@ -2,12 +2,57 @@
 #define EXPRESSION_H
 
 #include <any>
+#include <chrono> //TODO: to remove
+#include <string>
+#include <vector>
 
 #include <ceres/ceres.h>
 
 #include "BinaryOperator.h"
 #include "UnaryOperator.h"
 #include "Variable.h"
+
+template <typename T>
+std::vector<std::vector<T> > generateCombinations(std::vector<T> const& values, size_t n)
+{
+    if (values.empty() || n <= 0)
+        return std::vector<std::vector<T> >{};
+
+    std::vector<size_t> indices(n, 0);
+    std::vector<std::vector<T> > combinations;
+
+    while (true)
+    {
+        std::vector<T> combination;
+
+        for (size_t i{0}; i < n; ++i)
+            combination.emplace_back(values[indices[i]]);
+
+        combinations.emplace_back(combination);
+
+        int pos{n - 1};
+
+        while (pos >= 0)
+        {
+            if (indices[pos] + 1 < values.size())
+            {
+                ++indices[pos];
+
+                for (size_t j = pos + 1; j < n; ++j)
+                    indices[j] = 0;
+
+                break;
+            }
+            else
+                --pos;
+        }
+
+        if (pos < 0)
+            break;
+    }
+
+    return combinations;
+}
 
 bool isSymbol(std::string const& s)
 {
@@ -33,11 +78,22 @@ class Expression
         
         Expression(UnaryOperator<T> const& op, Expression const& operand) : operand1_{operand}, operand2_{0}, op_{op}
         {
+            for (auto const& v: operand.opTree_)
+                opTree_.emplace_back(v);
+
+            opTree_.emplace_back(op.name());
         }
         
         Expression(BinaryOperator<T> const& op, Expression const& operand1, Expression const& operand2)
             : operand1_{operand1}, operand2_{operand2}, op_{op}
         {
+            for (auto const& v: operand1.opTree_)
+                opTree_.emplace_back(v);
+
+            for (auto const& v: operand2.opTree_)
+                opTree_.emplace_back(v);
+
+            opTree_.emplace_back(op.name());
         }
 
         Eigen::Array<T, Eigen::Dynamic, 1> eval() const
@@ -226,10 +282,36 @@ class Expression
             return p;
         }
 
-        T fit(Eigen::Array<T, Eigen::Dynamic, 1> const& y)
+        T fit(Eigen::Array<T, Eigen::Dynamic, 1> const& y, std::vector<T> const& paramValues = std::vector<T>{})
         {
             std::vector<double> params;
             this->params(params);
+
+            if (paramValues.size())
+            {/*
+                auto const t{std::chrono::high_resolution_clock::now()};
+                auto const combinations{generateCombinations(paramValues, params.size())};
+                std::cout << (std::chrono::high_resolution_clock::now() - t).count() << std::endl;
+                T bestCost{std::numeric_limits<T>::infinity()};
+
+                for (auto const& v : combinations)
+                {
+                    applyParams(v);
+
+                    auto const x{eval()};
+                    auto const cost{(y - x).square().sum()};
+
+                    if (cost < bestCost)
+                    {
+                        bestCost = cost;
+                        params = v;
+                    }
+                }*/
+                params = optimizeParamsParallel(paramValues, params.size(), *this, y);
+
+                applyParams(params);
+            }
+
             auto const n{params.size()};
 
             std::vector<double*> param_ptrs(n);
@@ -253,17 +335,21 @@ class Expression
             ceres::Solver::Summary summary;
             ceres::Solve(options, &problem, &summary);
 
-            delete cost;
-
             applyParams(params);
 
             return summary.final_cost;
+        }
+
+        std::vector<std::string> const& opTree() const
+        {
+            return opTree_;
         }
 
     private:
         std::any operand1_; //Variable<T> or Expression
         std::any operand2_; //0 or valid operand
         std::any op_; //0 or valid operator
+        std::vector<std::string> opTree_;
 };
 
 template <typename S>
@@ -328,5 +414,73 @@ struct Residual
         Expression<T> expression_;
         const Eigen::Array<double, Eigen::Dynamic, 1> y_;
 };
+
+template <typename T, typename S>
+void generateAndEvaluate(
+    const std::vector<T>& values,
+    size_t n,
+    std::vector<T>& currentCombination,
+    size_t pos,
+    T& bestCost,
+    std::vector<T>& bestParams,
+    Expression<T> expression,
+    const S& y)
+{
+    if (pos == n)
+    {
+        expression.applyParams(currentCombination);
+        auto const x{expression.eval()};
+        T cost = (y - x).square().sum();
+
+        if (cost < bestCost)
+        {
+            bestCost = cost;
+            bestParams = currentCombination;
+        }
+
+        return;
+    }
+
+    for (const auto& val : values)
+    {
+        currentCombination[pos] = val;
+        generateAndEvaluate(values, n, currentCombination, pos + 1, bestCost, bestParams, expression, y);
+    }
+}
+
+template <typename T, typename S>
+std::vector<T> optimizeParamsParallel(
+    const std::vector<T>& paramValues,
+    size_t n,
+    Expression<T> const& expression,
+    const S& y)
+{
+    T globalBestCost = std::numeric_limits<T>::infinity();
+    std::vector<T> globalBestParams(n);
+
+    #pragma omp parallel
+    {
+        T localBestCost = std::numeric_limits<T>::infinity();
+        std::vector<T> localBestParams(n);
+        std::vector<T> currentCombination(n);
+
+        #pragma omp for nowait
+        for (size_t i = 0; i < paramValues.size(); ++i) {
+            currentCombination[0] = paramValues[i];
+            generateAndEvaluate(paramValues, n, currentCombination, 1, localBestCost, localBestParams, expression, y);
+        }
+
+        #pragma omp critical
+        {
+            if (localBestCost < globalBestCost)
+            {
+                globalBestCost = localBestCost;
+                globalBestParams = localBestParams;
+            }
+        }
+    }
+
+    return globalBestParams;
+}
 
 #endif // EXPRESSION_H
