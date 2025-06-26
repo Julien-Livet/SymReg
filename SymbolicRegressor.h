@@ -14,7 +14,7 @@ template <typename T>
 class SymbolicRegressor
 {
     public:
-        T epsLoss = std::numeric_limits<T>::epsilon();
+        T epsLoss = 1e-12;
 
         SymbolicRegressor(std::vector<Variable<T> > const& variables,
                           std::vector<UnaryOperator<T> > const& un_ops = std::vector<UnaryOperator<T> >{},
@@ -22,10 +22,12 @@ class SymbolicRegressor
                           size_t niterations = 5,
                           std::vector<T> const& paramValues = std::vector<T>{},
                           std::map<std::string, size_t> const& operatorDepth = std::map<std::string, size_t>{},
-                          std::vector<Expression<T> > const& extraExpressions = std::vector<Expression<T> >{})
+                          std::vector<Expression<T> > const& extraExpressions = std::vector<Expression<T> >{},
+                          bool verbose = false)
             : variables_{variables}, un_ops_{un_ops}, bin_ops_{bin_ops},
               niterations_{niterations}, paramValues_{paramValues},
-            operatorDepth_{operatorDepth}, extraExpressions_{extraExpressions}
+            operatorDepth_{operatorDepth}, extraExpressions_{extraExpressions},
+            verbose_{verbose}
         {
         }
 
@@ -46,19 +48,22 @@ class SymbolicRegressor
         
         std::pair<T, Expression<T>> fit(Eigen::Array<T, Eigen::Dynamic, 1> const& y)
         {
+            auto const verbose{verbose_}; //TODO: to remove
+            verbose_ = false; //TODO: to remove
+
             std::vector<Expression<T> > expressions;
             std::vector<T> costs;
 
             for (auto const& v : variables_)
             {
                 expressions.emplace_back(v);
-                costs.emplace_back(expressions.back().fit(y, paramValues_));
+                costs.emplace_back(expressions.back().fit(y, paramValues_, epsLoss, verbose_));
             }
 
             for (auto const& e : extraExpressions_)
             {
                 expressions.emplace_back(e);
-                costs.emplace_back(expressions.back().fit(y, paramValues_));
+                costs.emplace_back(expressions.back().fit(y, paramValues_, epsLoss, verbose_));
             }
 
             std::vector<std::pair<T, Expression<T> > > paired;
@@ -87,14 +92,14 @@ class SymbolicRegressor
 
             for (size_t i{0}; i < niterations_; ++i)
             {
-                //#pragma omp parallel //TODO: to uncomment
+                #pragma omp parallel
                 {
                     size_t const n{expressions.size()};
                     std::vector<Expression<T>> localExpressions;
                     std::vector<double> localCosts;
                     std::map<size_t, std::vector<size_t> > localUnIndices;
 
-                    //#pragma omp for nowait //TODO: to uncomment
+                    #pragma omp for nowait
                     for (size_t j = 0; j < n; ++j)
                     {
                         for (size_t k = 0; k < un_ops_.size(); ++k)
@@ -114,15 +119,21 @@ class SymbolicRegressor
                                 if (count < maxCount)
                                 {
                                     Expression<T> e{un_ops_[k], expressions[j]};
-                                    auto const cost{e.fit(y, paramValues_)};
+                                    auto const cost{e.fit(y, paramValues_, epsLoss, verbose_)};
                                     localExpressions.emplace_back(e);
                                     localCosts.emplace_back(cost);
+
+                                    if (cost < epsLoss)
+                                    {
+                                        j = n;
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
 
-                    //#pragma omp critical //TODO: to uncomment
+                    #pragma omp critical
                     {
                         expressions.insert(expressions.end(), localExpressions.begin(), localExpressions.end());
                         costs.insert(costs.end(), localCosts.begin(), localCosts.end());
@@ -152,14 +163,14 @@ class SymbolicRegressor
                         return paired.front();
                 }
 
-                //#pragma omp parallel //TODO: to uncomment
+                #pragma omp parallel
                 {
                     size_t const n{expressions.size()};
                     std::vector<Expression<T>> localExpressions;
                     std::vector<double> localCosts;
                     std::map<size_t, std::vector<std::pair<size_t, size_t> > > localBinIndices;
 
-                    //#pragma omp for nowait //TODO: to uncomment
+                    #pragma omp for nowait
                     for (size_t j1 = 0; j1 < n; ++j1)
                     {
                         for (size_t k = 0; k < bin_ops_.size(); ++k)
@@ -189,18 +200,26 @@ class SymbolicRegressor
                                     if (count1 < maxCount && count2 < maxCount)
                                     {
                                         Expression<T> e{bin_ops_[k], expressions[j1], expressions[j2]};
-                                        auto const cost{e.fit(y, paramValues_)};
+                                        auto const cost{e.fit(y, paramValues_, epsLoss, verbose_)};
                                         localExpressions.emplace_back(e);
                                         localCosts.emplace_back(cost);
 
-                                        std::cout << cost << " " << e.str() << " " << e.opt_str() << std::endl; //TODO: to remove
+                                        if (verbose)
+                                            std::cout << cost << " " << expr(e.str()) << " " << e.optStr() << std::endl; //TODO: to remove
+
+                                        if (cost < epsLoss)
+                                        {
+                                            k = bin_ops_.size();
+                                            j1 = n;
+                                            break;
+                                        }
                                     }
                                 }
                             }
                         }
                     }
 
-                    //#pragma omp critical //TODO: to uncomment
+                    #pragma omp critical
                     {
                         expressions.insert(expressions.end(), localExpressions.begin(), localExpressions.end());
                         costs.insert(costs.end(), localCosts.begin(), localCosts.end());
@@ -214,8 +233,6 @@ class SymbolicRegressor
                         }
                     }
                 }
-
-                exit(0); //TODO: to remove
 
                 {
                     paired.clear();
@@ -244,6 +261,7 @@ class SymbolicRegressor
         std::vector<T> paramValues_;
         std::map<std::string, size_t> operatorDepth_;
         std::vector<Expression<T> > extraExpressions_;
+        bool verbose_;
 };
 
 #endif // SYMBOLICREGRESSOR_H

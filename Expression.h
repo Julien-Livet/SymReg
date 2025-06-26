@@ -1,6 +1,7 @@
 #ifndef EXPRESSION_H
 #define EXPRESSION_H
 
+#include <algorithm>
 #include <any>
 #include <chrono> //TODO: to remove
 #include <string>
@@ -12,51 +13,34 @@
 #include "UnaryOperator.h"
 #include "Variable.h"
 
-template <typename T>
-std::vector<std::vector<T> > generateCombinations(std::vector<T> const& values, size_t n)
-{
-    if (values.empty() || n <= 0)
-        return std::vector<std::vector<T> >{};
-
-    std::vector<size_t> indices(n, 0);
-    std::vector<std::vector<T> > combinations;
-
-    while (true)
-    {
-        std::vector<T> combination;
-
-        for (size_t i{0}; i < n; ++i)
-            combination.emplace_back(values[indices[i]]);
-
-        combinations.emplace_back(combination);
-
-        int pos{n - 1};
-
-        while (pos >= 0)
-        {
-            if (indices[pos] + 1 < values.size())
-            {
-                ++indices[pos];
-
-                for (size_t j = pos + 1; j < n; ++j)
-                    indices[j] = 0;
-
-                break;
-            }
-            else
-                --pos;
-        }
-
-        if (pos < 0)
-            break;
-    }
-
-    return combinations;
-}
-
 bool isSymbol(std::string const& s)
 {
     return s == "+" || s == "-" || s == "*" || s == "/";
+}
+
+std::string expr(std::string const& s)
+{
+    auto const ca{std::ranges::count(s, 'a')};
+    auto const cb{std::ranges::count(s, 'b')};
+    auto e{s};
+    size_t pos_a{0};
+    size_t pos_b{0};
+
+    for (int i{0}; i < ca; ++i)
+    {
+        pos_a = e.find('a', pos_a);
+        e.replace(pos_a, 1, std::string("a") + std::to_string(i));
+        pos_a += 1;
+    }
+
+    for (int i{0}; i < cb; ++i)
+    {
+        pos_b = e.find('b', pos_b);
+        e.replace(pos_b, 1, std::string("b") + std::to_string(i));
+        pos_b += 1;
+    }
+
+    return e;
 }
 
 template <typename T>
@@ -71,6 +55,9 @@ class Expression
 
         ceres::Jet<T, 4> ja;
         ceres::Jet<T, 4> jb;
+
+        bool aFixed{false};
+        bool bFixed{false};
 
         Expression(Variable<T> const& variable) : operand1_{variable}, operand2_{0}, op_{0}
         {
@@ -94,31 +81,92 @@ class Expression
                 opTree_.emplace_back(v);
 
             opTree_.emplace_back(op.name());
+
+            if (op.name() == "+")
+            {
+                aFixed = true;
+
+                auto op1{operand1};
+                op1.bFixed = true;
+                operand1_ = op1;
+
+                auto op2{operand2};
+                op2.bFixed = true;
+                operand2_ = op2;
+            }
+            else if (op.name() == "*")
+            {
+                auto op1_{operand1};
+                op1_.bFixed = true;
+
+                auto op2_{operand2};
+                op2_.bFixed = true;
+
+                auto op1{operand1};
+                op1.aFixed = true;
+                op1.bFixed = true;
+                operand1_ = op1;
+
+                auto op2{operand2};
+                op2.aFixed = true;
+                op2.bFixed = true;
+                operand2_ = op2;
+
+                bFixed = true;
+
+                Expression<T> const add{BinaryOperator<T>::plus(), *this,
+                                        Expression<T>{BinaryOperator<T>::plus(), op1_, op2_}};
+
+                *this = add;
+            }
         }
 
         Eigen::Array<T, Eigen::Dynamic, 1> eval() const
         {
+            auto a_{a};
+            auto b_{b};
+
+            if (aFixed)
+                a_ = 1;
+
+            if (bFixed)
+                b_ = 0;
+
             if (op_.type() == typeid(int))
-                return a * std::any_cast<Variable<T> >(operand1_).value() + b;
+                return a_ * std::any_cast<Variable<T> >(operand1_).value() + b_;
             else if (op_.type() == typeid(UnaryOperator<T>))
-                return a * std::any_cast<UnaryOperator<T> >(op_).op()(std::any_cast<Expression>(operand1_).eval()) + b;
+                return a_ * std::any_cast<UnaryOperator<T> >(op_).op()(std::any_cast<Expression>(operand1_).eval()) + b_;
             else// if (op_.type() == typeid(BinaryOperator<T>))
-                return a * std::any_cast<BinaryOperator<T> >(op_).op()(std::any_cast<Expression>(operand1_).eval(), std::any_cast<Expression>(operand2_).eval()) + b;
+                return a_ * std::any_cast<BinaryOperator<T> >(op_).op()(std::any_cast<Expression>(operand1_).eval(), std::any_cast<Expression>(operand2_).eval()) + b_;
         }
 
         Eigen::Array<ceres::Jet<T, 4>, Eigen::Dynamic, 1> evalJets() const
         {
+            auto ja_{ja};
+            auto jb_{jb};
+
+            if (aFixed)
+                ja_ = ceres::Jet<T, 4>{1};
+
+            if (bFixed)
+                jb_ = ceres::Jet<T, 4>{0};
+
             if (op_.type() == typeid(int))
-                return ja * std::any_cast<Variable<T> >(operand1_).value() + jb;
+                return ja_ * std::any_cast<Variable<T> >(operand1_).value() + jb_;
             else if (op_.type() == typeid(UnaryOperator<T>))
-                return ja * std::any_cast<UnaryOperator<T> >(op_).op()(std::any_cast<Expression>(operand1_).eval()) + jb;
+                return ja_ * std::any_cast<UnaryOperator<T> >(op_).op()(std::any_cast<Expression>(operand1_).eval()) + jb_;
             else// if (op_.type() == typeid(BinaryOperator<T>))
-                return ja * std::any_cast<BinaryOperator<T> >(op_).op()(std::any_cast<Expression>(operand1_).eval(), std::any_cast<Expression>(operand2_).eval()) + jb;
+                return ja_ * std::any_cast<BinaryOperator<T> >(op_).op()(std::any_cast<Expression>(operand1_).eval(), std::any_cast<Expression>(operand2_).eval()) + jb_;
         }
 
         std::string str() const
         {
-            std::string s("a*(");
+            std::string s;
+
+            if (!aFixed)
+                s = "a*";
+
+            s += "(";
             
             if (op_.type() == typeid(int))
                 s += std::any_cast<Variable<T> >(operand1_).name();
@@ -133,43 +181,61 @@ class Expression
                 else
                     s += n + "(" + std::any_cast<Expression>(operand1_).str() + "," + std::any_cast<Expression>(operand2_).str() + ")";
             }
-                
-            s += ")+b";
+
+            s += ")";
+
+            if (!bFixed)
+                s += "+b";
             
             return s;
         }
 
-        std::string opt_str() const
+        std::string optStr() const
         {
+            auto a_{a};
+            auto b_{b};
+
+            if (aFixed)
+                a_ = 1;
+
+            if (bFixed)
+                b_ = 0;
+
             std::string s;
             
-            if (std::abs(a) > std::numeric_limits<T>::epsilon())
+            if (std::abs(a_) > std::numeric_limits<T>::epsilon())
             {
-                s += std::to_string(a) + "*(";
+                if (!aFixed)
+                    s += std::to_string(a_) + "*";
+
+                s += "(";
             
                 if (op_.type() == typeid(int))
                     s += std::any_cast<Variable<T> >(operand1_).name();
                 else if (op_.type() == typeid(UnaryOperator<T>))
-                    s += std::any_cast<UnaryOperator<T> >(op_).name() + "(" + std::any_cast<Expression>(operand1_).opt_str() + ")";
+                    s += std::any_cast<UnaryOperator<T> >(op_).name() + "(" + std::any_cast<Expression>(operand1_).optStr() + ")";
                 else// if (op_.type() == typeid(BinaryOperator<T>))
                 {
                     auto const n{std::any_cast<BinaryOperator<T> >(op_).name()};
 
                     if (isSymbol(n))
-                        s += "(" + std::any_cast<Expression>(operand1_).opt_str() + ")" + n + "(" + std::any_cast<Expression>(operand2_).opt_str() + ")";
+                        s += "(" + std::any_cast<Expression>(operand1_).optStr() + ")" + n + "(" + std::any_cast<Expression>(operand2_).optStr() + ")";
                     else
-                        s += n + "(" + std::any_cast<Expression>(operand1_).opt_str() + "," + std::any_cast<Expression>(operand2_).opt_str() + ")";
+                        s += n + "(" + std::any_cast<Expression>(operand1_).optStr() + "," + std::any_cast<Expression>(operand2_).optStr() + ")";
                 }
 
                 s += ")";
             }
 
-            if (std::abs(b) > std::numeric_limits<T>::epsilon())
+            if (std::abs(b_) > std::numeric_limits<T>::epsilon())
             {
-                if (s.size())
-                    s += "+";
-            
-                s += std::to_string(b);
+                if (!bFixed)
+                {
+                    if (s.size())
+                        s += "+";
+
+                    s += std::to_string(b_);
+                }
             }
 
             if (s.empty())
@@ -210,8 +276,10 @@ class Expression
 
         void params(std::vector<T>& params) const
         {
-            params.emplace_back(a);
-            params.emplace_back(b);
+            if (!aFixed)
+                params.emplace_back(a);
+            if (!bFixed)
+                params.emplace_back(b);
 
             if (operand1_.type() == typeid(Expression))
                 std::any_cast<Expression>(operand1_).params(params);
@@ -223,8 +291,10 @@ class Expression
         template <typename Container>
         void jets(Container& params) const
         {
-            params.emplace_back(ja);
-            params.emplace_back(jb);
+            if (!aFixed)
+                params.emplace_back(ja);
+            if (!bFixed)
+                params.emplace_back(jb);
 
             if (operand1_.type() == typeid(Expression))
                 std::any_cast<Expression>(operand1_).jets(params);
@@ -235,10 +305,21 @@ class Expression
 
         std::vector<T> applyParams(std::vector<T> const& params)
         {
-            a = params[0];
-            b = params[1];
+            size_t shift{0};
 
-            std::vector<T> p{params.begin() + 2, params.end()};
+            if (!aFixed)
+            {
+                a = params[shift];
+                ++shift;
+            }
+
+            if (!bFixed)
+            {
+                b = params[shift];
+                ++shift;
+            }
+
+            std::vector<T> p{params.begin() + shift, params.end()};
 
             if (operand1_.type() == typeid(Expression))
             {
@@ -260,10 +341,21 @@ class Expression
         template <typename Container>
         Container applyJets(Container const& params)
         {
-            ja = params[0];
-            jb = params[1];
+            size_t shift{0};
 
-            Container p{params.begin() + 2, params.end()};
+            if (!aFixed)
+            {
+                ja = params[shift];
+                ++shift;
+            }
+
+            if (!bFixed)
+            {
+                jb = params[shift];
+                ++shift;
+            }
+
+            Container p{params.begin() + shift, params.end()};
 
             if (operand1_.type() == typeid(Expression))
             {
@@ -282,34 +374,22 @@ class Expression
             return p;
         }
 
-        T fit(Eigen::Array<T, Eigen::Dynamic, 1> const& y, std::vector<T> const& paramValues = std::vector<T>{})
+        T fit(Eigen::Array<T, Eigen::Dynamic, 1> const& y, std::vector<T> const& paramValues = std::vector<T>{}, T epsLoss = 1e-6, bool verbose = false)
         {
             std::vector<double> params;
             this->params(params);
 
             if (paramValues.size())
-            {/*
-                auto const t{std::chrono::high_resolution_clock::now()};
-                auto const combinations{generateCombinations(paramValues, params.size())};
-                std::cout << (std::chrono::high_resolution_clock::now() - t).count() << std::endl;
-                T bestCost{std::numeric_limits<T>::infinity()};
-
-                for (auto const& v : combinations)
-                {
-                    applyParams(v);
-
-                    auto const x{eval()};
-                    auto const cost{(y - x).square().sum()};
-
-                    if (cost < bestCost)
-                    {
-                        bestCost = cost;
-                        params = v;
-                    }
-                }*/
+            {
                 params = optimizeParamsParallel(paramValues, params.size(), *this, y);
 
                 applyParams(params);
+
+                auto const x{eval()};
+                auto const cost{(y - x).square().sum()};
+
+                if (cost < epsLoss)
+                    return cost;
             }
 
             auto const n{params.size()};
@@ -331,6 +411,10 @@ class Expression
 
             ceres::Solver::Options options;
             options.linear_solver_type = ceres::DENSE_QR;
+            options.minimizer_progress_to_stdout = verbose;
+            //options.gradient_tolerance = 1e-10; //TODO: to remove
+            //options.function_tolerance = 1e-12; //TODO: to remove
+            //options.parameter_tolerance = 1e-12; //TODO: to remove
 
             ceres::Solver::Summary summary;
             ceres::Solve(options, &problem, &summary);
@@ -430,7 +514,7 @@ void generateAndEvaluate(
     {
         expression.applyParams(currentCombination);
         auto const x{expression.eval()};
-        T cost = (y - x).square().sum();
+        auto const cost{(y - x).square().sum()};
 
         if (cost < bestCost)
         {
@@ -465,7 +549,8 @@ std::vector<T> optimizeParamsParallel(
         std::vector<T> currentCombination(n);
 
         #pragma omp for nowait
-        for (size_t i = 0; i < paramValues.size(); ++i) {
+        for (size_t i = 0; i < paramValues.size(); ++i)
+        {
             currentCombination[0] = paramValues[i];
             generateAndEvaluate(paramValues, n, currentCombination, 1, localBestCost, localBestParams, expression, y);
         }
