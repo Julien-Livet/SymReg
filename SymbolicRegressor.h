@@ -92,14 +92,14 @@ class SymbolicRegressor
 
             for (size_t i{0}; i < niterations_; ++i)
             {
-                #pragma omp parallel
+                //#pragma omp parallel //TODO: to uncomment
                 {
                     size_t const n{expressions.size()};
                     std::vector<Expression<T>> localExpressions;
                     std::vector<double> localCosts;
                     std::map<size_t, std::vector<size_t> > localUnIndices;
 
-                    #pragma omp for nowait
+                    //#pragma omp for nowait //TODO: to uncomment
                     for (size_t j = 0; j < n; ++j)
                     {
                         for (size_t k = 0; k < un_ops_.size(); ++k)
@@ -133,7 +133,7 @@ class SymbolicRegressor
                         }
                     }
 
-                    #pragma omp critical
+                    //#pragma omp critical //TODO: to uncomment
                     {
                         expressions.insert(expressions.end(), localExpressions.begin(), localExpressions.end());
                         costs.insert(costs.end(), localCosts.begin(), localCosts.end());
@@ -163,14 +163,14 @@ class SymbolicRegressor
                         return paired.front();
                 }
 
-                #pragma omp parallel
+                //#pragma omp parallel //TODO: to uncomment
                 {
                     size_t const n{expressions.size()};
                     std::vector<Expression<T>> localExpressions;
                     std::vector<double> localCosts;
                     std::map<size_t, std::vector<std::pair<size_t, size_t> > > localBinIndices;
 
-                    #pragma omp for nowait
+                    //#pragma omp for nowait //TODO: to uncomment
                     for (size_t j1 = 0; j1 < n; ++j1)
                     {
                         for (size_t k = 0; k < bin_ops_.size(); ++k)
@@ -219,7 +219,7 @@ class SymbolicRegressor
                         }
                     }
 
-                    #pragma omp critical
+                    //#pragma omp critical //TODO: to uncomment
                     {
                         expressions.insert(expressions.end(), localExpressions.begin(), localExpressions.end());
                         costs.insert(costs.end(), localCosts.begin(), localCosts.end());

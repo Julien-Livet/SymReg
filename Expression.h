@@ -542,20 +542,20 @@ std::vector<T> optimizeParamsParallel(
     T globalBestCost = std::numeric_limits<T>::infinity();
     std::vector<T> globalBestParams(n);
 
-    #pragma omp parallel
+    //#pragma omp parallel //TODO: to uncomment
     {
         T localBestCost = std::numeric_limits<T>::infinity();
         std::vector<T> localBestParams(n);
         std::vector<T> currentCombination(n);
 
-        #pragma omp for nowait
+        //#pragma omp for nowait //TODO: to uncomment
         for (size_t i = 0; i < paramValues.size(); ++i)
         {
             currentCombination[0] = paramValues[i];
             generateAndEvaluate(paramValues, n, currentCombination, 1, localBestCost, localBestParams, expression, y);
         }
 
-        #pragma omp critical
+        //#pragma omp critical //TODO: to uncomment
         {
             if (localBestCost < globalBestCost)
             {
