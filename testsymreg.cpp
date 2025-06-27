@@ -395,7 +395,7 @@ void TestSymReg::test4()
                          std::vector<BinOp>{BinOp::times(), BinOp::plus()},
                          3};
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(z)};
 
     QVERIFY(p.first < sr.epsLoss);
 }
