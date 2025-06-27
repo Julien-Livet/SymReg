@@ -198,7 +198,7 @@ void TestSymReg::test5x1Add7x2Addx3Add8()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testLinearFit()
@@ -219,7 +219,7 @@ void TestSymReg::testLinearFit()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testLogFit()
@@ -238,11 +238,11 @@ void TestSymReg::testLogFit()
 
     auto const ls{Eigen::ArrayXd::LinSpaced(5 + 1, 0, 5)};
     std::vector<double> paramsValue;
-    //for (int i{0}; i < ls.size(); ++i)
-    //    paramsValue.emplace_back(ls[i]);
+    for (int i{0}; i < ls.size(); ++i)
+        paramsValue.emplace_back(ls[i]);
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
-                         std::vector<UnOp>{UnOp::log(), UnOp::exp()},
+                         std::vector<UnOp>{UnOp::log()},
                          std::vector<BinOp>{},
                          1,
                          paramsValue};
@@ -251,7 +251,7 @@ void TestSymReg::testLogFit()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test2()
@@ -289,7 +289,7 @@ void TestSymReg::test2()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test3()
@@ -332,7 +332,7 @@ void TestSymReg::test3()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test5()
@@ -365,7 +365,7 @@ void TestSymReg::test5()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test6()
@@ -397,7 +397,7 @@ void TestSymReg::test6()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testPySR()
@@ -446,7 +446,7 @@ void TestSymReg::testPySR()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testGPLearn()
@@ -483,7 +483,7 @@ void TestSymReg::testGPLearn()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testLine()
@@ -531,7 +531,7 @@ void TestSymReg::testLine()
 
     auto const p{sr.fit(zero)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testCircle()
@@ -577,7 +577,7 @@ void TestSymReg::testCircle()
 
     auto const p{sr.fit(zero)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testPlane()
@@ -633,7 +633,7 @@ void TestSymReg::testPlane()
 
     auto const p{sr.fit(zero)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testSphere()
@@ -682,7 +682,7 @@ void TestSymReg::testSphere()
 
     auto const p{sr.fit(zero)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testx1Mulx2()
@@ -712,7 +712,7 @@ void TestSymReg::testx1Mulx2()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testNguyen1()
@@ -745,7 +745,7 @@ void TestSymReg::testNguyen1()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testNguyen2()
@@ -778,7 +778,7 @@ void TestSymReg::testNguyen2()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testNguyen3()
@@ -811,7 +811,7 @@ void TestSymReg::testNguyen3()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testNguyen4()
@@ -844,7 +844,7 @@ void TestSymReg::testNguyen4()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testNguyen5()
@@ -889,7 +889,7 @@ void TestSymReg::testNguyen5()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testNguyen6()
@@ -925,7 +925,7 @@ void TestSymReg::testNguyen6()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testNguyen7()
@@ -962,7 +962,7 @@ void TestSymReg::testNguyen7()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testNguyen8()
@@ -996,7 +996,7 @@ void TestSymReg::testNguyen8()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testNguyen9()
@@ -1043,7 +1043,7 @@ void TestSymReg::testNguyen9()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testNguyen10()
@@ -1082,7 +1082,7 @@ void TestSymReg::testNguyen10()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::testKeijzer10()
@@ -1119,7 +1119,7 @@ void TestSymReg::testKeijzer10()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test_d_bacres1()
@@ -1146,7 +1146,7 @@ void TestSymReg::test_d_bacres1()
 
     auto const p{sr.fit(data.label)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test_d_bacres2()
@@ -1173,7 +1173,7 @@ void TestSymReg::test_d_bacres2()
 
     auto const p{sr.fit(data.label)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test_d_barmag1()
@@ -1200,7 +1200,7 @@ void TestSymReg::test_d_barmag1()
 
     auto const p{sr.fit(data.label)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test_d_barmag2()
@@ -1227,7 +1227,7 @@ void TestSymReg::test_d_barmag2()
 
     auto const p{sr.fit(data.label)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test_d_glider1()
@@ -1255,7 +1255,7 @@ void TestSymReg::test_d_glider1()
 
     auto const p{sr.fit(data.label)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test_d_glider2()
@@ -1283,7 +1283,7 @@ void TestSymReg::test_d_glider2()
 
     auto const p{sr.fit(data.label)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test_d_lv1()
@@ -1310,7 +1310,7 @@ void TestSymReg::test_d_lv1()
 
     auto const p{sr.fit(data.label)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test_d_lv2()
@@ -1337,7 +1337,7 @@ void TestSymReg::test_d_lv2()
 
     auto const p{sr.fit(data.label)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test_d_predprey1()
@@ -1365,7 +1365,7 @@ void TestSymReg::test_d_predprey1()
 
     auto const p{sr.fit(data.label)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test_d_predprey2()
@@ -1393,7 +1393,7 @@ void TestSymReg::test_d_predprey2()
 
     auto const p{sr.fit(data.label)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test_d_shearflow1()
@@ -1421,7 +1421,7 @@ void TestSymReg::test_d_shearflow1()
 
     auto const p{sr.fit(data.label)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test_d_shearflow2()
@@ -1450,7 +1450,7 @@ void TestSymReg::test_d_shearflow2()
 
     auto const p{sr.fit(data.label)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test_d_vdp1()
@@ -1477,7 +1477,7 @@ void TestSymReg::test_d_vdp1()
 
     auto const p{sr.fit(data.label)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 void TestSymReg::test_d_vdp2()
@@ -1504,7 +1504,7 @@ void TestSymReg::test_d_vdp2()
 
     auto const p{sr.fit(data.label)};
 
-    QVERIFY(p.first < 1e-6);
+    QVERIFY(p.first < sr.epsLoss);
 }
 
 QTEST_MAIN(TestSymReg)
