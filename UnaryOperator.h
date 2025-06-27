@@ -49,6 +49,13 @@ public:
                              [] (auto const& x) {return x.exp();}};
     }
 
+    static UnaryOperator cot()
+    {
+        return UnaryOperator{"cot",
+                             [] (auto const& x) {return x.tan().inverse();},
+                             [] (auto const& x) {return x.tan().inverse();}};
+    }
+
     static UnaryOperator cos()
     {
         return UnaryOperator{"cos",

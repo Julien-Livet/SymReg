@@ -7,14 +7,18 @@ class TestSymReg : public QObject
     private slots:
         void initTestCase();
         void test5x1Add7x2Addx3Add8();
+        void testLinearFit();
+        void testLogFit();
         void test2();
         void test3();
         void test5();
         void test6();
         void testPySR();
         void testx1Mulx2();
-        void testLinearFit();
-        void testLogFit();
+        void testNguyen1();
+        void testNguyen2();
+        void testNguyen3();
+        void testNguyen4();
         void testNguyen5();
         void testNguyen6();
         void testNguyen7();
@@ -22,36 +26,122 @@ class TestSymReg : public QObject
         void testNguyen9();
         void testNguyen10();
         void testKeijzer10();
+        void test_d_bacres1();
+        void test_d_bacres2();
+        void test_d_barmag1();
+        void test_d_barmag2();
+        void test_d_glider1();
+        void test_d_glider2();
+        void test_d_lv1();
+        void test_d_lv2();
+        void test_d_predprey1();
+        void test_d_predprey2();
+        void test_d_shearflow1();
+        void test_d_shearflow2();
+        void test_d_vdp1();
+        void test_d_vdp2();
 };
 
 #include <cmath>
 #include <iostream>
 
+#include <boost/algorithm/string.hpp>
+
+#include <curl/curl.h>
+
 #include "SymbolicRegressor.h"
+
+size_t writeCallback(void* contents, size_t size, size_t nmemb, void* userp)
+{
+    size_t totalSize = size * nmemb;
+    std::string* str = static_cast<std::string*>(userp);
+    str->append(static_cast<char*>(contents), totalSize);
+
+    return totalSize;
+}
+
+std::string downloadUrlToString(std::string const& url)
+{
+    CURL* curl;
+    CURLcode res;
+    std::string result;
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    curl = curl_easy_init();
+
+    if (curl)
+    {
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result);
+
+        res = curl_easy_perform(curl);
+
+        if (res != CURLE_OK)
+            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+
+        curl_easy_cleanup(curl);
+    }
+
+    curl_global_cleanup();
+
+    return result;
+}
+
+struct StrotagtzData
+{
+    Eigen::Array<double, Eigen::Dynamic, 1> label;
+    Eigen::Array<double, Eigen::Dynamic, 1> x;
+    Eigen::Array<double, Eigen::Dynamic, 1> y;
+};
+
+StrotagtzData downloadUrlData(std::string const& url)
+{
+    auto const content{downloadUrlToString(url)};
+
+    std::vector<std::string> lines;
+    boost::split(lines, content, boost::is_any_of("\n"));
+
+    std::vector<double> label, x, y;
+
+    for (size_t i{1}; lines.size(); ++i)
+    {
+        if (lines[i].empty())
+            continue;
+
+        std::vector<std::string> values;
+        boost::split(values, lines[i], boost::is_any_of(","));
+
+        label.emplace_back(std::stod(values[0]));
+        x.emplace_back(std::stod(values[1]));
+        y.emplace_back(std::stod(values[2]));
+    }
+
+    StrotagtzData data;
+
+    data.label.resize(label.size());
+    data.x.resize(x.size());
+    data.y.resize(y.size());
+
+    for (size_t i{0}; i < label.size(); ++i)
+    {
+        data.label[i] = label[i];
+        data.x[i] = x[i];
+        data.y[i] = y[i];
+    }
+
+    return data;
+}
 
 void TestSymReg::initTestCase()
 {
-    auto const timeout{30 * 60 * 1000};
+    auto const timeout{60 * 60 * 1000};
 
-    qputenv("QTEST_FUNCTION_TIMEOUT", QString::number(timeout).toUtf8());/**
-    //TODO: to remove
-    size_t constexpr n{100};
-    Eigen::ArrayXd x1(n);
-    x1.setRandom();
-    Eigen::ArrayXd x2(n);
-    x2.setRandom();
-    Eigen::ArrayXd x3(n);
-    x3.setRandom();
-
-    using Var = Variable<double>;
-    using BinOp = BinaryOperator<double>;
-
-    Expression<double> const add{BinOp::plus(), Var{"x1", x1}, Var{"x2", x2}};
-    std::cout << add.str() << std::endl;
-    Expression<double> const mul{BinOp::times(), Var{"x1", x1}, Var{"x2", x2}};
-    std::cout << mul.str() << std::endl;
-    Expression<double> const add1{BinOp::plus(), add, Var{"x3", x3}};
-    std::cout << add1.str() << std::endl;**/
+    //qputenv("GLOG_logtostderr", "1");
+    //qputenv("GLOG_stderrthreshold", "3");
+    //qputenv("GLOG_minloglevel", "3");
+    //qputenv("GLOG_v", "-3");
+    qputenv("QTEST_FUNCTION_TIMEOUT", QString::number(timeout).toUtf8());
 }
 
 void TestSymReg::test5x1Add7x2Addx3Add8()
@@ -77,9 +167,9 @@ void TestSymReg::test5x1Add7x2Addx3Add8()
     using BinOp = BinaryOperator<double>;
 
     auto const ls{Eigen::ArrayXd::LinSpaced(11, 0, 10)};
-    std::vector<double> paramsValue;/*
-    for (int i{0}; i < ls.size(); ++i)
-        paramsValue.emplace_back(ls[i]);*/
+    std::vector<double> paramsValue;
+    //for (int i{0}; i < ls.size(); ++i)
+    //    paramsValue.emplace_back(ls[i]);
 
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["+"] = 2;
@@ -100,6 +190,59 @@ void TestSymReg::test5x1Add7x2Addx3Add8()
                          paramsValue,
                          operatorDepth,
                          std::vector<Expression<double> >{/*e*/}};
+
+    auto const p{sr.fit(y)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::testLinearFit()
+{
+    std::cout << "Running testLinearFit" << std::endl;
+
+    //srand(0);
+    srand(time(0));
+
+    Eigen::ArrayXd x(7);
+    x.setRandom();
+
+    using Var = Variable<double>;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", x)}};
+
+    auto const y(2 * x + 3);
+
+    auto const p{sr.fit(y)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::testLogFit()
+{
+    std::cout << "Running testLogFit" << std::endl;
+
+    //srand(0);
+    srand(time(0));
+
+    Eigen::ArrayXd x(100);
+    x.setRandom();
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    auto const ls{Eigen::ArrayXd::LinSpaced(5 + 1, 0, 5)};
+    std::vector<double> paramsValue;
+    //for (int i{0}; i < ls.size(); ++i)
+    //    paramsValue.emplace_back(ls[i]);
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
+                         std::vector<UnOp>{UnOp::log(), UnOp::exp()},
+                         std::vector<BinOp>{},
+                         1,
+                         paramsValue};
+
+    auto const y(2 * Eigen::log(3 * x + 4) + 5);
 
     auto const p{sr.fit(y)};
 
@@ -164,12 +307,23 @@ void TestSymReg::test3()
     using BinOp = BinaryOperator<double>;
 
     std::vector<double> const paramsValue{0, 1};
+    std::vector<Expression<double> > extraExpressions;
+    //extraExpressions.emplace_back(Expression<double>(BinOp::divide(),
+    //                                                 Var("x", x),
+    //                                                 Expression<double>(BinOp::times(),
+    //                                                                    Var("x", x),
+    //                                                                    Var("x", x))));
+    std::map<std::string, size_t> operatorDepth;
+    operatorDepth["/"] = 1;
+    operatorDepth["*"] = 1;
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
                          std::vector<UnOp>{},
                          std::vector<BinOp>{BinOp::times(), BinOp::divide()},
                          2,
-                         paramsValue};
+                         paramsValue,
+                         operatorDepth,
+                         extraExpressions};
 
     auto const p{sr.fit(y)};
 
@@ -228,7 +382,7 @@ void TestSymReg::test6()
     using UnOp = UnaryOperator<double>;
     using BinOp = BinaryOperator<double>;
 
-    std::vector<double> const paramsValue{0, -0.5, 1.0 / std::sqrt(2 * M_PI)};
+    std::vector<double> const paramsValue{/*0, 1, -0.5, 1.0 / std::sqrt(2 * M_PI)*/};
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
                          std::vector<UnOp>{UnOp::exp()},
@@ -244,7 +398,7 @@ void TestSymReg::test6()
 void TestSymReg::testPySR()
 {
     std::cout << "Running testPySR" << std::endl;
-/*
+
     //srand(0);
     srand(time(0));
 
@@ -267,20 +421,27 @@ void TestSymReg::testPySR()
     using UnOp = UnaryOperator<double>;
     using BinOp = BinaryOperator<double>;
 
-    std::vector<double> const paramsValue{0, 1, -0.5, 2.5382};
+    std::vector<double> const paramsValue{/*0, 1, -0.5, 2.5382*/};
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["cos"] = 1;
+    operatorDepth["*"] = 1;
+    operatorDepth["+"] = 1;
+    std::vector<Expression<double> > extraExpressions;
+    //extraExpressions.emplace_back(Expression<double>{BinOp::plus(),
+    //                                                 Expression<double>{UnOp::cos(), Var{"x3", x3}},
+    //                                                 Expression<double>{BinOp::times(), Var{"x0", x0}, Var{"x0", x0}}});
 
     SymbolicRegressor sr{std::vector<Var>{Var("x0", x0), Var("x1", x1), Var("x2", x2), Var("x3", x3), Var("x4", x4)},
                          std::vector<UnOp>{UnOp::cos()},
                          std::vector<BinOp>{BinOp::times(), BinOp::plus()},
-                         3,
+                         2,
                          paramsValue,
-                         operatorDepth};
+                         operatorDepth,
+                         extraExpressions};
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);*/
+    QVERIFY(p.first < 1e-6);
 }
 
 void TestSymReg::testx1Mulx2()
@@ -309,66 +470,136 @@ void TestSymReg::testx1Mulx2()
                          1};
 
     auto const p{sr.fit(y)};
-    std::cout << p.first << std::endl;
-    std::cout << p.second.str() << std::endl;
-    std::cout << p.second.optStr() << std::endl;
 
     QVERIFY(p.first < 1e-6);
 }
 
-void TestSymReg::testLinearFit()
+void TestSymReg::testNguyen1()
 {
-    std::cout << "Running testLinearFit" << std::endl;
+    std::cout << "Running testNguyen1" << std::endl;
+
+    //f(x) = x**3 + x**2 + x
 
     //srand(0);
     srand(time(0));
 
-    Eigen::ArrayXd x(7);
+    size_t constexpr n{100};
+
+    Eigen::ArrayXd x(n);
     x.setRandom();
 
-    using Var = Variable<double>;
-
-    SymbolicRegressor sr{std::vector<Var>{Var("x", x)}};
-
-    auto const y(2 * x + 3);
-
-    auto const p{sr.fit(y)};
-
-    QVERIFY(p.first < 1e-6);
-
-    std::vector<double> params;
-    p.second.params(params);
-
-    QVERIFY(std::abs(params[0] - 2) < 1e-6);
-    QVERIFY(std::abs(params[1] - 3) < 1e-6);
-}
-
-void TestSymReg::testLogFit()
-{
-    std::cout << "Running testLogFit" << std::endl;
-
-    //srand(0);
-    srand(time(0));
-
-    Eigen::ArrayXd x(100);
-    x.setRandom();
+    auto const y{x.pow(3) + x.pow(2) + x};
 
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
     using BinOp = BinaryOperator<double>;
 
-    auto const ls{Eigen::ArrayXd::LinSpaced(5 + 1, 0, 5)};
-    std::vector<double> paramsValue;
-    for (int i{0}; i < ls.size(); ++i)
-        paramsValue.emplace_back(ls[i]);
+    std::vector<double> const paramsValue{/*0, 1*/};
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
-                         std::vector<UnOp>{UnOp::log(), UnOp::exp()},
-                         std::vector<BinOp>{},
-                         1,
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::times()},
+                         4,
                          paramsValue};
 
-    auto const y(2 * Eigen::log(3 * x + 4) + 5);
+    auto const p{sr.fit(y)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::testNguyen2()
+{
+    std::cout << "Running testNguyen2" << std::endl;
+
+    //f(x) = x**4 + x**3 + x**2 + x
+
+    //srand(0);
+    srand(time(0));
+
+    size_t constexpr n{100};
+
+    Eigen::ArrayXd x(n);
+    x.setRandom();
+
+    auto const y{x.pow(4) + x.pow(3) + x.pow(2) + x};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue{/*0, 1*/};
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::times()},
+                         4,
+                         paramsValue};
+
+    auto const p{sr.fit(y)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::testNguyen3()
+{
+    std::cout << "Running testNguyen3" << std::endl;
+
+    //f(x) = x**5 + x**4 + x**3 + x**2 + x
+
+    //srand(0);
+    srand(time(0));
+
+    size_t constexpr n{100};
+
+    Eigen::ArrayXd x(n);
+    x.setRandom();
+
+    auto const y{x.pow(5) + x.pow(4) + x.pow(3) + x.pow(2) + x};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue{/*0, 1*/};
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::times()},
+                         4,
+                         paramsValue};
+
+    auto const p{sr.fit(y)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::testNguyen4()
+{
+    std::cout << "Running testNguyen4" << std::endl;
+
+    //f(x) = x**6 + x**5 + x**4 + x**3 + x**2 + x
+
+    //srand(0);
+    srand(time(0));
+
+    size_t constexpr n{100};
+
+    Eigen::ArrayXd x(n);
+    x.setRandom();
+
+    auto const y{x.pow(6) + x.pow(5) + x.pow(4) + x.pow(3) + x.pow(2) + x};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue{/*0, 1*/};
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::times()},
+                         4,
+                         paramsValue};
 
     auto const p{sr.fit(y)};
 
@@ -639,6 +870,391 @@ void TestSymReg::testKeijzer10()
                          paramsValue};
 
     auto const p{sr.fit(y)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::test_d_bacres1()
+{
+    std::cout << "Running test_d_bacres1" << std::endl;
+
+    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_bacres1.txt")};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::map<std::string, size_t> operatorDepth;
+    operatorDepth["/"] = 1;
+    operatorDepth["*"] = 2;
+    operatorDepth["+"] = 2;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::times(), BinOp::plus(), BinOp::divide()},
+                         3,
+                         std::vector<double>{},
+                         operatorDepth};
+
+    auto const p{sr.fit(data.label)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::test_d_bacres2()
+{
+    std::cout << "Running test_d_bacres2" << std::endl;
+
+    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_bacres2.txt")};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::map<std::string, size_t> operatorDepth;
+    operatorDepth["/"] = 1;
+    operatorDepth["*"] = 2;
+    operatorDepth["+"] = 2;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::times(), BinOp::plus(), BinOp::divide()},
+                         3,
+                         std::vector<double>{},
+                         operatorDepth};
+
+    auto const p{sr.fit(data.label)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::test_d_barmag1()
+{
+    std::cout << "Running test_d_barmag1" << std::endl;
+
+    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_barmag1.txt")};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue{-1, 0, 1, 0.5};
+    std::map<std::string, size_t> operatorDepth;
+    operatorDepth["sin"] = 1;
+    operatorDepth["+"] = 2;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
+                         std::vector<UnOp>{UnOp::sin()},
+                         std::vector<BinOp>{BinOp::plus()},
+                         3,
+                         paramsValue,
+                         operatorDepth};
+
+    auto const p{sr.fit(data.label)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::test_d_barmag2()
+{
+    std::cout << "Running test_d_barmag2" << std::endl;
+
+    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_barmag2.txt")};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue{-1, 0, 1, 0.5};
+    std::map<std::string, size_t> operatorDepth;
+    operatorDepth["sin"] = 1;
+    operatorDepth["+"] = 2;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
+                         std::vector<UnOp>{UnOp::sin()},
+                         std::vector<BinOp>{BinOp::plus()},
+                         3,
+                         paramsValue,
+                         operatorDepth};
+
+    auto const p{sr.fit(data.label)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::test_d_glider1()
+{
+    std::cout << "Running test_d_glider1" << std::endl;
+
+    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_glider1.txt")};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue{-1, 0, 1, -0.05};
+    std::map<std::string, size_t> operatorDepth;
+    operatorDepth["sin"] = 1;
+    operatorDepth["+"] = 2;
+    operatorDepth["*"] = 2;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
+                         std::vector<UnOp>{UnOp::sin()},
+                         std::vector<BinOp>{BinOp::plus(), BinOp::times()},
+                         3,
+                         paramsValue,
+                         operatorDepth};
+
+    auto const p{sr.fit(data.label)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::test_d_glider2()
+{
+    std::cout << "Running test_d_glider2" << std::endl;
+
+    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_glider2.txt")};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue{/*-1, 0, 1*/};
+    std::map<std::string, size_t> operatorDepth;
+    operatorDepth["cos"] = 1;
+    operatorDepth["/"] = 1;
+    operatorDepth["+"] = 2;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
+                         std::vector<UnOp>{UnOp::cos()},
+                         std::vector<BinOp>{BinOp::plus(), BinOp::divide()},
+                         3,
+                         paramsValue,
+                         operatorDepth};
+
+    auto const p{sr.fit(data.label)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::test_d_lv1()
+{
+    std::cout << "Running test_d_lv1" << std::endl;
+
+    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_lv1.txt")};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue{-3, -2, -1, 0, 1, 2, 3};
+    std::map<std::string, size_t> operatorDepth;
+    operatorDepth["*"] = 3;
+    operatorDepth["+"] = 3;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::plus(), BinOp::times()},
+                         3,
+                         paramsValue,
+                         operatorDepth};
+
+    auto const p{sr.fit(data.label)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::test_d_lv2()
+{
+    std::cout << "Running test_d_lv2" << std::endl;
+
+    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_lv2.txt")};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue{-2, -1, 0, 1, 2};
+    std::map<std::string, size_t> operatorDepth;
+    operatorDepth["*"] = 3;
+    operatorDepth["+"] = 3;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::plus(), BinOp::times()},
+                         3,
+                         paramsValue,
+                         operatorDepth};
+
+    auto const p{sr.fit(data.label)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::test_d_predprey1()
+{
+    std::cout << "Running test_d_predprey1" << std::endl;
+
+    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_predprey1.txt")};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue;
+    std::map<std::string, size_t> operatorDepth;
+    operatorDepth["/"] = 1;
+    operatorDepth["*"] = 2;
+    operatorDepth["+"] = 4;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::plus(), BinOp::times(), BinOp::divide()},
+                         3,
+                         paramsValue,
+                         operatorDepth};
+
+    auto const p{sr.fit(data.label)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::test_d_predprey2()
+{
+    std::cout << "Running test_d_predprey2" << std::endl;
+
+    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_predprey2.txt")};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue;
+    std::map<std::string, size_t> operatorDepth;
+    operatorDepth["/"] = 1;
+    operatorDepth["*"] = 2;
+    operatorDepth["+"] = 2;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::plus(), BinOp::times(), BinOp::divide()},
+                         3,
+                         paramsValue,
+                         operatorDepth};
+
+    auto const p{sr.fit(data.label)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::test_d_shearflow1()
+{
+    std::cout << "Running test_d_shearflow1" << std::endl;
+
+    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_shearflow1.txt")};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue{-1, 0, 1};
+    std::map<std::string, size_t> operatorDepth;
+    operatorDepth["cos"] = 1;
+    operatorDepth["cot"] = 1;
+    operatorDepth["*"] = 2;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
+                         std::vector<UnOp>{UnOp::cos(), UnOp::cot()},
+                         std::vector<BinOp>{BinOp::times()},
+                         3,
+                         paramsValue,
+                         operatorDepth};
+
+    auto const p{sr.fit(data.label)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::test_d_shearflow2()
+{
+    std::cout << "Running test_d_shearflow2" << std::endl;
+
+    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_shearflow2.txt")};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue{0, 1, 0.1};
+    std::map<std::string, size_t> operatorDepth;
+    operatorDepth["sin"] = 1;
+    operatorDepth["cos"] = 1;
+    operatorDepth["+"] = 2;
+    operatorDepth["*"] = 2;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
+                         std::vector<UnOp>{UnOp::cos(), UnOp::sin()},
+                         std::vector<BinOp>{BinOp::times(), BinOp::plus()},
+                         3,
+                         paramsValue,
+                         operatorDepth};
+
+    auto const p{sr.fit(data.label)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::test_d_vdp1()
+{
+    std::cout << "Running test_d_vdp1" << std::endl;
+
+    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_vdp1.txt")};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue;
+    std::map<std::string, size_t> operatorDepth;
+    operatorDepth["+"] = 2;
+    operatorDepth["*"] = 2;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::times(), BinOp::plus()},
+                         3,
+                         paramsValue,
+                         operatorDepth};
+
+    auto const p{sr.fit(data.label)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::test_d_vdp2()
+{
+    std::cout << "Running test_d_vdp2" << std::endl;
+
+    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_vdp2.txt")};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue;
+    std::map<std::string, size_t> operatorDepth;
+    operatorDepth["+"] = 2;
+    operatorDepth["*"] = 2;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::times(), BinOp::plus()},
+                         3,
+                         paramsValue,
+                         operatorDepth};
+
+    auto const p{sr.fit(data.label)};
 
     QVERIFY(p.first < 1e-6);
 }
