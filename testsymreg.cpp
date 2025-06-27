@@ -84,13 +84,22 @@ void TestSymReg::test5x1Add7x2Addx3Add8()
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["+"] = 2;
 
+    Expression<double> e{BinaryOperator<double>::plus(),
+                         Variable<double>{"x1", x1},
+                         Expression<double>{BinaryOperator<double>::plus(),
+                                            Variable<double>{"x3", x3}, Variable<double>{"x2", x2}}};
+    std::vector<double> params;
+    e.params(params);
+    params = std::vector<double>{0, 1, 1, 1};
+    e.applyParams(params);
+
     SymbolicRegressor sr{std::vector<Var>{Var("x1", x1), Var("x2", x2), Var("x3", x3)},
                          std::vector<UnOp>{},
                          std::vector<BinOp>{BinOp::plus()},
-                         3,
+                         0,//3,
                          paramsValue,
                          operatorDepth,
-                         std::vector<Expression<double> >{},
+                         std::vector<Expression<double> >{e},
                          true};
 
     auto const p{sr.fit(y)};

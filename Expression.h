@@ -164,9 +164,7 @@ class Expression
             std::string s;
 
             if (!aFixed)
-                s = "a*";
-
-            s += "(";
+                s = "a*(";
             
             if (op_.type() == typeid(int))
                 s += std::any_cast<Variable<T> >(operand1_).name();
@@ -182,7 +180,8 @@ class Expression
                     s += n + "(" + std::any_cast<Expression>(operand1_).str() + "," + std::any_cast<Expression>(operand2_).str() + ")";
             }
 
-            s += ")";
+            if (!aFixed)
+                s += ")";
 
             if (!bFixed)
                 s += "+b";
@@ -202,14 +201,12 @@ class Expression
                 b_ = 0;
 
             std::string s;
-            
+
             if (std::abs(a_) > std::numeric_limits<T>::epsilon())
             {
                 if (!aFixed)
-                    s += std::to_string(a_) + "*";
+                    s += std::to_string(a_) + "*(";
 
-                s += "(";
-            
                 if (op_.type() == typeid(int))
                     s += std::any_cast<Variable<T> >(operand1_).name();
                 else if (op_.type() == typeid(UnaryOperator<T>))
@@ -224,7 +221,8 @@ class Expression
                         s += n + "(" + std::any_cast<Expression>(operand1_).optStr() + "," + std::any_cast<Expression>(operand2_).optStr() + ")";
                 }
 
-                s += ")";
+                if (!aFixed)
+                    s += ")";
             }
 
             if (std::abs(b_) > std::numeric_limits<T>::epsilon())
@@ -240,7 +238,7 @@ class Expression
 
             if (s.empty())
                 s = "0";
-            
+
             return s;
         }
 
@@ -411,6 +409,8 @@ class Expression
 
             ceres::Solver::Options options;
             options.linear_solver_type = ceres::DENSE_QR;
+            if (verbose)//TODO: to remove
+                std::cout << expr(str()) << " " << optStr() << std::endl;//TODO: to remove
             options.minimizer_progress_to_stdout = verbose;
             //options.gradient_tolerance = 1e-10; //TODO: to remove
             //options.function_tolerance = 1e-12; //TODO: to remove
@@ -447,6 +447,12 @@ struct UnderlyingScalar<ceres::Jet<T, N>> {
 };
 
 template <typename T>
+struct is_ceres_jet : std::false_type {};
+
+template <typename T, int N>
+struct is_ceres_jet<ceres::Jet<T, N>> : std::true_type {};
+
+template <typename T>
 struct Residual
 {
     Residual(Expression<T> const& expression,
@@ -460,7 +466,7 @@ struct Residual
     {
         using Scalar = typename UnderlyingScalar<S>::type;
 
-        if constexpr (typeid(S) == typeid(T))
+        if constexpr (!is_ceres_jet<S>::value)
         {
             std::vector<Scalar> params;
             expression_.params(params);
@@ -488,7 +494,10 @@ struct Residual
             auto const x{expression_.evalJets()};
 
             for (int i{0}; i < x.size(); ++i)
-                residual[i] = S(y_[i]) - S(x[i]);
+            {
+                residual[i] = S(y_[i]) - x[i];
+                //std::cout << residual[i].v.transpose() << std::endl;//TODO: to remove
+            }
         }
 
         return true;

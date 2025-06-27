@@ -48,9 +48,6 @@ class SymbolicRegressor
         
         std::pair<T, Expression<T>> fit(Eigen::Array<T, Eigen::Dynamic, 1> const& y)
         {
-            auto const verbose{verbose_}; //TODO: to remove
-            verbose_ = false; //TODO: to remove
-
             std::vector<Expression<T> > expressions;
             std::vector<T> costs;
 
@@ -203,9 +200,6 @@ class SymbolicRegressor
                                         auto const cost{e.fit(y, paramValues_, epsLoss, verbose_)};
                                         localExpressions.emplace_back(e);
                                         localCosts.emplace_back(cost);
-
-                                        if (verbose)
-                                            std::cout << cost << " " << expr(e.str()) << " " << e.optStr() << std::endl; //TODO: to remove
 
                                         if (cost < epsLoss)
                                         {
