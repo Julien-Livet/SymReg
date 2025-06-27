@@ -9,8 +9,10 @@ class TestSymReg : public QObject
         void test5x1Add7x2Addx3Add8();
         void testLinearFit();
         void testLogFit();
+        void test1();
         void test2();
         void test3();
+        void test4();
         void test5();
         void test6();
         void testPySR();
@@ -254,6 +256,37 @@ void TestSymReg::testLogFit()
     QVERIFY(p.first < sr.epsLoss);
 }
 
+void TestSymReg::test1()
+{
+    std::cout << "Running test1" << std::endl;
+
+    //x**2+x+1
+
+    //srand(0);
+    srand(time(0));
+
+    size_t constexpr n{100};
+
+    Eigen::ArrayXd x(n);
+    x.setRandom();
+    x *= 10;
+
+    auto const y{x.pow(2) + x + 1};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::times()},
+                         3};
+
+    auto const p{sr.fit(y)};
+
+    QVERIFY(p.first < sr.epsLoss);
+}
+
 void TestSymReg::test2()
 {
     std::cout << "Running test2" << std::endl;
@@ -329,6 +362,38 @@ void TestSymReg::test3()
                          paramsValue,
                          operatorDepth,
                          extraExpressions};
+
+    auto const p{sr.fit(y)};
+
+    QVERIFY(p.first < sr.epsLoss);
+}
+
+void TestSymReg::test4()
+{
+    std::cout << "Running test4" << std::endl;
+
+    //x**2+x+1
+
+    //srand(0);
+    srand(time(0));
+
+    size_t constexpr n{100};
+
+    Eigen::ArrayXd x(n);
+    x.setRandom();
+    Eigen::ArrayXd y(n);
+    y.setRandom();
+
+    auto const z{x.pow(2) + y.pow(2)};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", x), Var("y", y)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::times(), BinOp::plus()},
+                         3};
 
     auto const p{sr.fit(y)};
 
