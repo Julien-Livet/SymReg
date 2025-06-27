@@ -56,14 +56,38 @@ class SymbolicRegressor
 
             for (auto const& v : variables_)
             {
-                expressions.emplace_back(v);
-                costs.emplace_back(expressions.back().fit(y, paramValues_, epsLoss, verbose_));
+                Expression<T> e{v};
+                auto cost{e.fit(y, paramValues_, epsLoss, verbose_)};
+
+                std::vector<T> params;
+                e.params(params);
+
+                if (boost::math::tools::l2_norm(params) < eps)
+                    cost = std::numeric_limits<T>::infinity();
+
+                expressions.emplace_back(e);
+                costs.emplace_back(cost);
+
+                if (cost < epsLoss)
+                    break;
             }
 
-            for (auto const& e : extraExpressions_)
+            for (auto const& expression : extraExpressions_)
             {
+                Expression<T> e{expression};
+                auto cost{e.fit(y, paramValues_, epsLoss, verbose_)};
+
+                std::vector<T> params;
+                e.params(params);
+
+                if (boost::math::tools::l2_norm(params) < eps)
+                    cost = std::numeric_limits<T>::infinity();
+
                 expressions.emplace_back(e);
-                costs.emplace_back(expressions.back().fit(y, paramValues_, epsLoss, verbose_));
+                costs.emplace_back(cost);
+
+                if (cost < epsLoss)
+                    break;
             }
 
             std::vector<std::pair<T, Expression<T> > > paired;
@@ -77,14 +101,8 @@ class SymbolicRegressor
                 for (size_t i{0}; i < paired.size(); ++i)
                     expressions[i] = paired[i].second;
 
-                if (paired.front().first < epsLoss)
-                {
-                    std::vector<T> params;
-                    paired.front().second.params(params);
-
-                    if (boost::math::tools::l2_norm(params) > eps)
-                        return paired.front();
-                }
+                if (!paired.empty() && paired.front().first < epsLoss)
+                    return paired.front();
             }
 
             std::map<size_t, std::vector<size_t> > unIndices;
@@ -125,20 +143,21 @@ class SymbolicRegressor
                                 if (count < maxCount)
                                 {
                                     Expression<T> e{un_ops_[k], expressions[j]};
-                                    auto const cost{e.fit(y, paramValues_, epsLoss, verbose_)};
+                                    auto cost{e.fit(y, paramValues_, epsLoss, verbose_)};
+
+                                    std::vector<T> params;
+                                    e.params(params);
+
+                                    if (boost::math::tools::l2_norm(params) < eps)
+                                        cost = std::numeric_limits<T>::infinity();
+
                                     localExpressions.emplace_back(e);
                                     localCosts.emplace_back(cost);
 
                                     if (cost < epsLoss)
                                     {
-                                        std::vector<T> params;
-                                        e.params(params);
-
-                                        if (boost::math::tools::l2_norm(params) > eps)
-                                        {
-                                            j = n;
-                                            break;
-                                        }
+                                        j = n;
+                                        break;
                                     }
                                 }
                             }
@@ -171,14 +190,8 @@ class SymbolicRegressor
                     for (size_t i{0}; i < paired.size(); ++i)
                         expressions[i] = paired[i].second;
 
-                    if (paired.front().first < epsLoss)
-                    {
-                        std::vector<T> params;
-                        paired.front().second.params(params);
-
-                        if (boost::math::tools::l2_norm(params) > eps)
-                            return paired.front();
-                    }
+                    if (!paired.empty() && paired.front().first < epsLoss)
+                        return paired.front();
                 }
 
                 #pragma omp parallel
@@ -218,21 +231,22 @@ class SymbolicRegressor
                                     if (count1 < maxCount && count2 < maxCount)
                                     {
                                         Expression<T> e{bin_ops_[k], expressions[j1], expressions[j2]};
-                                        auto const cost{e.fit(y, paramValues_, epsLoss, verbose_)};
+                                        auto cost{e.fit(y, paramValues_, epsLoss, verbose_)};
+
+                                        std::vector<T> params;
+                                        e.params(params);
+
+                                        if (boost::math::tools::l2_norm(params) < eps)
+                                            cost = std::numeric_limits<T>::infinity();
+
                                         localExpressions.emplace_back(e);
                                         localCosts.emplace_back(cost);
 
                                         if (cost < epsLoss)
                                         {
-                                            std::vector<T> params;
-                                            e.params(params);
-
-                                            if (boost::math::tools::l2_norm(params) > eps)
-                                            {
-                                                k = bin_ops_.size();
-                                                j1 = n;
-                                                break;
-                                            }
+                                            k = bin_ops_.size();
+                                            j1 = n;
+                                            break;
                                         }
                                     }
                                 }
@@ -266,16 +280,13 @@ class SymbolicRegressor
                     for (size_t i{0}; i < paired.size(); ++i)
                         expressions[i] = paired[i].second;
 
-                    if (paired.front().first < epsLoss)
-                    {
-                        std::vector<T> params;
-                        paired.front().second.params(params);
-
-                        if (boost::math::tools::l2_norm(params) > eps)
-                            return paired.front();
-                    }
+                    if (!paired.empty() && paired.front().first < epsLoss)
+                        return paired.front();
                 }
             }
+
+            if (paired.empty())
+                throw std::runtime_error("No expression found!");
 
             return paired.front();
         }

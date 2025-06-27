@@ -50,7 +50,7 @@ class Expression
 {
     public:
         T a{1};
-        T b{0};
+        T b{1};
 
         ceres::Jet<T, 4> ja;
         ceres::Jet<T, 4> jb;

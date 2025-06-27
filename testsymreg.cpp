@@ -490,6 +490,9 @@ void TestSymReg::testLine()
 {
     std::cout << "Running testLine" << std::endl;
 
+    //srand(0);
+    srand(time(0));
+
     Eigen::Vector2d u{1, 2};
     u /= u.norm();
     Eigen::Vector2d const p0{3, 4};
@@ -501,7 +504,7 @@ void TestSymReg::testLine()
 
     for (size_t i{0}; i < n; ++i)
     {
-        auto const t{10 * rand() / RAND_MAX - 5};
+        auto const t{10.0 * rand() / RAND_MAX - 5};
         auto const p{t * u + p0};
         x[i] = p[0];
         y[i] = p[1];
@@ -535,6 +538,9 @@ void TestSymReg::testCircle()
 {
     std::cout << "Running testCircle" << std::endl;
 
+    //srand(0);
+    srand(time(0));
+
     Eigen::Array2d const p0{1, 2};
     double const rho{4};
 
@@ -545,7 +551,7 @@ void TestSymReg::testCircle()
 
     for (size_t i{0}; i < n; ++i)
     {
-        auto const theta{2 * M_PI * rand() / RAND_MAX};
+        auto const theta{2.0 * M_PI * rand() / RAND_MAX};
         x[i] = p0[0] + rho * std::cos(theta);
         y[i] = p0[1] + rho * std::sin(theta);
     }
@@ -578,6 +584,9 @@ void TestSymReg::testPlane()
 {
     std::cout << "Running testPlane" << std::endl;
 
+    //srand(0);
+    srand(time(0));
+
     Eigen::Vector3d n{1, 2, 3};
     n /= n.norm();
     Eigen::Vector3d u{-4, 5, 6};
@@ -595,8 +604,8 @@ void TestSymReg::testPlane()
 
     for (size_t i{0}; i < N; ++i)
     {
-        auto const t1{10 * rand() / RAND_MAX - 5};
-        auto const t2{10 * rand() / RAND_MAX - 5};
+        auto const t1{10.0 * rand() / RAND_MAX - 5};
+        auto const t2{10.0 * rand() / RAND_MAX - 5};
         auto const p{t1 * u + t2 * v + p0};
         x[i] = p[0];
         y[i] = p[1];
@@ -631,6 +640,9 @@ void TestSymReg::testSphere()
 {
     std::cout << "Running testSphere" << std::endl;
 
+    //srand(0);
+    srand(time(0));
+
     Eigen::Array3d const p0{1, 2, 3};
     double const rho{4};
 
@@ -643,7 +655,7 @@ void TestSymReg::testSphere()
     for (size_t i{0}; i < n; ++i)
     {
         auto const theta{M_PI * rand() / RAND_MAX - M_PI / 2};
-        auto const phi{2 * M_PI * rand() / RAND_MAX};
+        auto const phi{2.0 * M_PI * rand() / RAND_MAX};
         x[i] = p0[0] + rho * std::cos(theta) * std::cos(phi);
         y[i] = p0[1] + rho * std::cos(theta) * std::sin(phi);
         z[i] = p0[2] + rho * std::sin(theta);
