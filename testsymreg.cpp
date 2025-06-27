@@ -58,8 +58,8 @@ void TestSymReg::test5x1Add7x2Addx3Add8()
 {
     std::cout << "Running test5x1Add7x2Addx3Add8" << std::endl;
 
-    srand(0);
-    //srand(time(0));
+    //srand(0);
+    srand(time(0));
 
     size_t constexpr n{100};
 
@@ -96,18 +96,12 @@ void TestSymReg::test5x1Add7x2Addx3Add8()
     SymbolicRegressor sr{std::vector<Var>{Var("x1", x1), Var("x2", x2), Var("x3", x3)},
                          std::vector<UnOp>{},
                          std::vector<BinOp>{BinOp::plus()},
-                         0,//3,
+                         3,
                          paramsValue,
                          operatorDepth,
-                         std::vector<Expression<double> >{e},
-                         true};
+                         std::vector<Expression<double> >{/*e*/}};
 
     auto const p{sr.fit(y)};
-    std::cout << p.first << std::endl;
-    std::cout << p.second.str() << std::endl;
-    std::cout << p.second.optStr() << std::endl;
-
-    exit(0);
 
     QVERIFY(p.first < 1e-6);
 }

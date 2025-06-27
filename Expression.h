@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <any>
-#include <chrono> //TODO: to remove
 #include <string>
 #include <vector>
 
@@ -154,9 +153,9 @@ class Expression
             if (op_.type() == typeid(int))
                 return ja_ * std::any_cast<Variable<T> >(operand1_).value() + jb_;
             else if (op_.type() == typeid(UnaryOperator<T>))
-                return ja_ * std::any_cast<UnaryOperator<T> >(op_).op()(std::any_cast<Expression>(operand1_).eval()) + jb_;
+                return ja_ * std::any_cast<UnaryOperator<T> >(op_).jetOp()(std::any_cast<Expression>(operand1_).evalJets()) + jb_;
             else// if (op_.type() == typeid(BinaryOperator<T>))
-                return ja_ * std::any_cast<BinaryOperator<T> >(op_).op()(std::any_cast<Expression>(operand1_).eval(), std::any_cast<Expression>(operand2_).eval()) + jb_;
+                return ja_ * std::any_cast<BinaryOperator<T> >(op_).jetOp()(std::any_cast<Expression>(operand1_).evalJets(), std::any_cast<Expression>(operand2_).evalJets()) + jb_;
         }
 
         std::string str() const
@@ -409,12 +408,7 @@ class Expression
 
             ceres::Solver::Options options;
             options.linear_solver_type = ceres::DENSE_QR;
-            if (verbose)//TODO: to remove
-                std::cout << expr(str()) << " " << optStr() << std::endl;//TODO: to remove
             options.minimizer_progress_to_stdout = verbose;
-            //options.gradient_tolerance = 1e-10; //TODO: to remove
-            //options.function_tolerance = 1e-12; //TODO: to remove
-            //options.parameter_tolerance = 1e-12; //TODO: to remove
 
             ceres::Solver::Summary summary;
             ceres::Solve(options, &problem, &summary);
@@ -466,11 +460,11 @@ struct Residual
     {
         using Scalar = typename UnderlyingScalar<S>::type;
 
+        std::vector<Scalar> params;
+        expression_.params(params);
+
         if constexpr (!is_ceres_jet<S>::value)
         {
-            std::vector<Scalar> params;
-            expression_.params(params);
-
             for (size_t i{0}; i < params.size(); ++i)
                 params[i] = *p[i];
 
@@ -494,10 +488,7 @@ struct Residual
             auto const x{expression_.evalJets()};
 
             for (int i{0}; i < x.size(); ++i)
-            {
                 residual[i] = S(y_[i]) - x[i];
-                //std::cout << residual[i].v.transpose() << std::endl;//TODO: to remove
-            }
         }
 
         return true;
