@@ -372,7 +372,7 @@ void TestSymReg::test4()
 {
     std::cout << "Running test4" << std::endl;
 
-    //x**2+x+1
+    //x**2+y**2
 
     //srand(0);
     srand(time(0));
