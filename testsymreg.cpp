@@ -140,13 +140,13 @@ StrotagtzData downloadUrlData(std::string const& url)
 
 void TestSymReg::initTestCase()
 {
-    auto const timeout{60 * 60 * 1000};
+    //auto const timeout{10 * 60 * 1000}; //minutes
+    auto const timeout{3 * 60 * 60 * 1000}; //hours
 
-    //qputenv("GLOG_logtostderr", "1");
-    //qputenv("GLOG_stderrthreshold", "3");
-    //qputenv("GLOG_minloglevel", "3");
-    //qputenv("GLOG_v", "-3");
     qputenv("QTEST_FUNCTION_TIMEOUT", QString::number(timeout).toUtf8());
+
+    //freopen("/dev/null", "w", stderr);
+    freopen("/tmp/stderr.txt", "w", stderr);
 }
 
 void TestSymReg::test5x1Add7x2Addx3Add8()
@@ -872,13 +872,20 @@ void TestSymReg::testNguyen5()
     operatorDepth["sin"] = 1;
     operatorDepth["cos"] = 1;
     operatorDepth["*"] = 2;
+    std::vector<Expression<double> > extraExpressions;
+    //extraExpressions.emplace_back(Expression<double>(BinOp::times(),
+    //                                                 Expression<double>(UnOp::cos(), Var("x", x)),
+    //                                                 Expression<double>(UnOp::sin(), Expression<double>(BinOp::times(),
+    //                                                                                                    Var("x", x),
+    //                                                                                                    Var("x", x)))));
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
                          std::vector<UnOp>{UnOp::sin(), UnOp::cos()},
                          std::vector<BinOp>{BinOp::times()},
                          3,
                          paramsValue,
-                         operatorDepth};
+                         operatorDepth,
+                         extraExpressions};
 
     auto const p{sr.fit(y)};
 
@@ -995,7 +1002,7 @@ void TestSymReg::testNguyen8()
 void TestSymReg::testNguyen9()
 {
     std::cout << "Running testNguyen9" << std::endl;
-/**
+
     //f(x) = sin(x1)+sin(x2**2)
 
     //srand(0);
@@ -1036,7 +1043,7 @@ void TestSymReg::testNguyen9()
 
     auto const p{sr.fit(y)};
 
-    QVERIFY(p.first < 1e-6);**/
+    QVERIFY(p.first < 1e-6);
 }
 
 void TestSymReg::testNguyen10()
