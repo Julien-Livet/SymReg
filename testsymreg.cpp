@@ -14,6 +14,11 @@ class TestSymReg : public QObject
         void test5();
         void test6();
         void testPySR();
+        void testGPLearn();
+        void testLine();
+        void testCircle();
+        void testPlane();
+        void testSphere();
         void testx1Mulx2();
         void testNguyen1();
         void testNguyen2();
@@ -440,6 +445,230 @@ void TestSymReg::testPySR()
                          extraExpressions};
 
     auto const p{sr.fit(y)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::testGPLearn()
+{
+    std::cout << "Running testGPLearn" << std::endl;
+
+    //srand(0);
+    srand(time(0));
+
+    size_t constexpr n{100};
+
+    Eigen::ArrayXd x0(n);
+    x0.setRandom();
+    Eigen::ArrayXd x1(n);
+    x1.setRandom();
+
+    auto const y{x0 * x0 - x1 * x1 + x1 - 1};
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue;
+    std::map<std::string, size_t> operatorDepth;
+    std::vector<Expression<double> > extraExpressions;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x0", x0), Var("x1", x1)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::times(), BinOp::plus()},
+                         3,
+                         paramsValue,
+                         operatorDepth,
+                         extraExpressions};
+
+    auto const p{sr.fit(y)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::testLine()
+{
+    std::cout << "Running testLine" << std::endl;
+
+    Eigen::Vector2d u{1, 2};
+    u /= u.norm();
+    Eigen::Vector2d const p0{3, 4};
+
+    size_t constexpr n{10};
+
+    Eigen::ArrayXd x(n);
+    Eigen::ArrayXd y(n);
+
+    for (size_t i{0}; i < n; ++i)
+    {
+        auto const t{10 * rand() / RAND_MAX - 5};
+        auto const p{t * u + p0};
+        x[i] = p[0];
+        y[i] = p[1];
+    }
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue;
+    std::map<std::string, size_t> operatorDepth;
+    std::vector<Expression<double> > extraExpressions;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", x), Var("y", y)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::plus()},
+                         3,
+                         paramsValue,
+                         operatorDepth,
+                         extraExpressions};
+
+    auto zero{x};
+    zero *= 0;
+
+    auto const p{sr.fit(zero)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::testCircle()
+{
+    std::cout << "Running testCircle" << std::endl;
+
+    Eigen::Array2d const p0{1, 2};
+    double const rho{4};
+
+    size_t constexpr n{10};
+
+    Eigen::ArrayXd x(n);
+    Eigen::ArrayXd y(n);
+
+    for (size_t i{0}; i < n; ++i)
+    {
+        auto const theta{2 * M_PI * rand() / RAND_MAX};
+        x[i] = p0[0] + rho * std::cos(theta);
+        y[i] = p0[1] + rho * std::sin(theta);
+    }
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue;
+    std::map<std::string, size_t> operatorDepth;
+    std::vector<Expression<double> > extraExpressions;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", x), Var("y", y)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::plus(), BinOp::times()},
+                         3,
+                         paramsValue,
+                         operatorDepth,
+                         extraExpressions};
+
+    auto zero{x};
+    zero *= 0;
+
+    auto const p{sr.fit(zero)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::testPlane()
+{
+    std::cout << "Running testPlane" << std::endl;
+
+    Eigen::Vector3d n{1, 2, 3};
+    n /= n.norm();
+    Eigen::Vector3d u{-4, 5, 6};
+    u /= u.norm();
+    Eigen::Vector3d v{n.cross(u)};
+    v /= v.norm();
+    u = v.cross(n);
+    Eigen::Vector3d const p0{3, 4, 5};
+
+    size_t constexpr N{10};
+
+    Eigen::ArrayXd x(N);
+    Eigen::ArrayXd y(N);
+    Eigen::ArrayXd z(N);
+
+    for (size_t i{0}; i < N; ++i)
+    {
+        auto const t1{10 * rand() / RAND_MAX - 5};
+        auto const t2{10 * rand() / RAND_MAX - 5};
+        auto const p{t1 * u + t2 * v + p0};
+        x[i] = p[0];
+        y[i] = p[1];
+        z[i] = p[2];
+    }
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue;
+    std::map<std::string, size_t> operatorDepth;
+    std::vector<Expression<double> > extraExpressions;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", x), Var("y", y), Var("z", z)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::plus()},
+                         3,
+                         paramsValue,
+                         operatorDepth,
+                         extraExpressions};
+
+    auto zero{x};
+    zero *= 0;
+
+    auto const p{sr.fit(zero)};
+
+    QVERIFY(p.first < 1e-6);
+}
+
+void TestSymReg::testSphere()
+{
+    std::cout << "Running testSphere" << std::endl;
+
+    Eigen::Array3d const p0{1, 2, 3};
+    double const rho{4};
+
+    size_t constexpr n{10};
+
+    Eigen::ArrayXd x(n);
+    Eigen::ArrayXd y(n);
+    Eigen::ArrayXd z(n);
+
+    for (size_t i{0}; i < n; ++i)
+    {
+        auto const theta{M_PI * rand() / RAND_MAX - M_PI / 2};
+        auto const phi{2 * M_PI * rand() / RAND_MAX};
+        x[i] = p0[0] + rho * std::cos(theta) * std::cos(phi);
+        y[i] = p0[1] + rho * std::cos(theta) * std::sin(phi);
+        z[i] = p0[2] + rho * std::sin(theta);
+    }
+
+    using Var = Variable<double>;
+    using UnOp = UnaryOperator<double>;
+    using BinOp = BinaryOperator<double>;
+
+    std::vector<double> const paramsValue;
+    std::map<std::string, size_t> operatorDepth;
+    std::vector<Expression<double> > extraExpressions;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", x), Var("y", y), Var("z", z)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::plus(), BinOp::times()},
+                         3,
+                         paramsValue,
+                         operatorDepth,
+                         extraExpressions};
+
+    auto zero{x};
+    zero *= 0;
+
+    auto const p{sr.fit(zero)};
 
     QVERIFY(p.first < 1e-6);
 }

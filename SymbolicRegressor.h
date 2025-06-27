@@ -5,6 +5,8 @@
 #include <map>
 #include <vector>
 
+#include <boost/math/tools/norms.hpp>
+
 #include "BinaryOperator.h"
 #include "Expression.h"
 #include "UnaryOperator.h"
@@ -14,6 +16,7 @@ template <typename T>
 class SymbolicRegressor
 {
     public:
+        T eps = 1e-6;
         T epsLoss = 1e-12;
 
         SymbolicRegressor(std::vector<Variable<T> > const& variables,
@@ -75,7 +78,13 @@ class SymbolicRegressor
                     expressions[i] = paired[i].second;
 
                 if (paired.front().first < epsLoss)
-                    return paired.front();
+                {
+                    std::vector<T> params;
+                    paired.front().second.params(params);
+
+                    if (boost::math::tools::l2_norm(params) > eps)
+                        return paired.front();
+                }
             }
 
             std::map<size_t, std::vector<size_t> > unIndices;
@@ -122,8 +131,14 @@ class SymbolicRegressor
 
                                     if (cost < epsLoss)
                                     {
-                                        j = n;
-                                        break;
+                                        std::vector<T> params;
+                                        e.params(params);
+
+                                        if (boost::math::tools::l2_norm(params) > eps)
+                                        {
+                                            j = n;
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -157,7 +172,13 @@ class SymbolicRegressor
                         expressions[i] = paired[i].second;
 
                     if (paired.front().first < epsLoss)
-                        return paired.front();
+                    {
+                        std::vector<T> params;
+                        paired.front().second.params(params);
+
+                        if (boost::math::tools::l2_norm(params) > eps)
+                            return paired.front();
+                    }
                 }
 
                 #pragma omp parallel
@@ -203,9 +224,15 @@ class SymbolicRegressor
 
                                         if (cost < epsLoss)
                                         {
-                                            k = bin_ops_.size();
-                                            j1 = n;
-                                            break;
+                                            std::vector<T> params;
+                                            e.params(params);
+
+                                            if (boost::math::tools::l2_norm(params) > eps)
+                                            {
+                                                k = bin_ops_.size();
+                                                j1 = n;
+                                                break;
+                                            }
                                         }
                                     }
                                 }
@@ -240,7 +267,13 @@ class SymbolicRegressor
                         expressions[i] = paired[i].second;
 
                     if (paired.front().first < epsLoss)
-                        return paired.front();
+                    {
+                        std::vector<T> params;
+                        paired.front().second.params(params);
+
+                        if (boost::math::tools::l2_norm(params) > eps)
+                            return paired.front();
+                    }
                 }
             }
 
