@@ -1,0 +1,36 @@
+name: C++ CI with Ceres
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y libcurl4-openssl-dev
+        sudo apt install -y cmake libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev
+        git clone --recursive https://ceres-solver.googlesource.com/ceres-solver
+        cd SymReg
+        mkdir build && cd build
+        cmake .. -DBUILD_TESTING=OFF
+        make -j$(nproc)
+        sudo make install
+
+    - name: Configure project
+      run: cmake -S . -B build
+
+    - name: Build project
+      run: cmake --build build
+
+    - name: Run tests
+      run: ctest --test-dir build --output-on-failure
