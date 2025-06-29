@@ -20,7 +20,7 @@ jobs:
         sudo apt install -y libcurl4-openssl-dev
         sudo apt install -y cmake libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev
         git clone --recursive https://ceres-solver.googlesource.com/ceres-solver
-        cd SymReg
+        cd ceres-solver
         mkdir build && cd build
         cmake .. -DBUILD_TESTING=OFF
         make -j$(nproc)
