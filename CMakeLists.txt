@@ -14,12 +14,13 @@ FetchContent_MakeAvailable(googletest)
 
 find_package(Ceres REQUIRED)
 find_package(CURL REQUIRED)
+find_package(OpenMP REQUIRED)
 
 include_directories(include)
 
 enable_testing()
 add_executable(test_symreg tests/test_symreg.cpp)
-target_link_libraries(test_symreg Ceres::ceres CURL::libcurl gtest gtest_main)
+target_link_libraries(test_symreg Ceres::ceres CURL::libcurl gtest gtest_main OpenMP::OpenMP_CXX)
 
 include(GoogleTest)
 gtest_discover_tests(test_symreg)

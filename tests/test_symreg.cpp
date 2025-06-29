@@ -378,7 +378,7 @@ TEST(TestSymReg, Test6)
     using UnOp = UnaryOperator<double>;
     using BinOp = BinaryOperator<double>;
 
-    std::vector<double> const paramsValue;//{0, 1, -0.5, 1.0 / std::sqrt(2 * M_PI)};
+    std::vector<double> const paramsValue;//{0, -0.5, 1.0 / std::sqrt(2 * M_PI)};
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
                          std::vector<UnOp>{UnOp::exp()},
