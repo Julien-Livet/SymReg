@@ -15,8 +15,14 @@ FetchContent_MakeAvailable(googletest)
 find_package(Ceres REQUIRED)
 find_package(CURL REQUIRED)
 find_package(OpenMP REQUIRED)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Charts)
 
 include_directories(include)
+
+set(CMAKE_AUTOMOC ON)
+
+add_executable(primes_demo src/primes_demo.cpp)
+target_link_libraries(primes_demo Ceres::ceres OpenMP::OpenMP_CXX Qt5::Widgets Qt5::Charts)
 
 enable_testing()
 add_executable(test_symreg tests/test_symreg.cpp)

@@ -28,11 +28,12 @@ namespace sr
                               std::vector<T> const& paramValues = std::vector<T>{},
                               std::map<std::string, size_t> const& operatorDepth = std::map<std::string, size_t>{},
                               std::vector<Expression<T> > const& extraExpressions = std::vector<Expression<T> >{},
-                              bool verbose = false)
+                              bool verbose = false,
+                              std::function<void(Expression<T> const&, T const&)> const& callback = [] (Expression<T> const&, T const&) {})
                 : variables_{variables}, un_ops_{un_ops}, bin_ops_{bin_ops},
                   niterations_{niterations}, paramValues_{paramValues},
-                operatorDepth_{operatorDepth}, extraExpressions_{extraExpressions},
-                verbose_{verbose}
+                  operatorDepth_{operatorDepth}, extraExpressions_{extraExpressions},
+                  verbose_{verbose}, callback_(callback)
             {
             }
 
@@ -69,6 +70,8 @@ namespace sr
 
                     expressions.emplace_back(e);
                     costs.emplace_back(cost);
+                    
+                    callback_(e, cost);
 
                     if (cost < epsLoss)
                         break;
@@ -87,6 +90,8 @@ namespace sr
 
                     expressions.emplace_back(e);
                     costs.emplace_back(cost);
+                    
+                    callback_(e, cost);
 
                     if (cost < epsLoss)
                         break;
@@ -155,6 +160,8 @@ namespace sr
 
                                         localExpressions.emplace_back(e);
                                         localCosts.emplace_back(cost);
+                    
+                                        callback_(e, cost);
 
                                         if (cost < epsLoss)
                                         {
@@ -243,6 +250,8 @@ namespace sr
 
                                             localExpressions.emplace_back(e);
                                             localCosts.emplace_back(cost);
+                    
+                                            callback_(e, cost);
 
                                             if (cost < epsLoss)
                                             {
@@ -302,6 +311,7 @@ namespace sr
             std::map<std::string, size_t> operatorDepth_;
             std::vector<Expression<T> > extraExpressions_;
             bool verbose_;
+            std::function<void(Expression<T> const&, T const&)> callback_;
     };
 }
 

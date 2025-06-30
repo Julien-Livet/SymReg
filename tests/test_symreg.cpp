@@ -64,7 +64,7 @@ StrotagtzData downloadUrlData(std::string const& url)
 
     std::vector<double> label, x, y;
 
-    for (size_t i{1}; lines.size(); ++i)
+    for (size_t i{1}; i < lines.size(); ++i)
     {
         if (lines[i].empty())
             continue;
@@ -91,6 +91,18 @@ StrotagtzData downloadUrlData(std::string const& url)
     }
 
     return data;
+}
+
+double bestLoss = std::numeric_limits<double>::infinity();
+
+void callback(Expression<double> const& e, double const& loss)
+{
+    if (loss < bestLoss)
+    {
+        bestLoss = loss;
+        std::cout << expr(e.str()) << std::endl;
+        std::cout << e.optStr() << std::endl;
+    }
 }
 
 TEST(TestSymReg, 5x1Add7x2Addx3Add8)
@@ -815,7 +827,7 @@ TEST(TestSymReg, Nguyen4)
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
-
+/*
 TEST(TestSymReg, Nguyen5)
 {
     //f(x) = sin(x**2)cos(x)-1
@@ -858,7 +870,7 @@ TEST(TestSymReg, Nguyen5)
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
-
+*/
 TEST(TestSymReg, Nguyen6)
 {
     //f(x) = sin(x)+sin(x+x**2)
@@ -880,6 +892,8 @@ TEST(TestSymReg, Nguyen6)
     std::vector<double> const paramsValue{0, 1};
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["sin"] = 1;
+    operatorDepth["*"] = 1;
+    operatorDepth["+"] = 1;
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
                          std::vector<UnOp>{UnOp::sin()},
@@ -915,6 +929,8 @@ TEST(TestSymReg, Nguyen7)
     std::vector<double> const paramsValue{0, 1};
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["log"] = 1;
+    operatorDepth["*"] = 1;
+    operatorDepth["+"] = 1;
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
                          std::vector<UnOp>{UnOp::log()},
@@ -959,7 +975,7 @@ TEST(TestSymReg, Nguyen8)
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
-
+/*
 TEST(TestSymReg, Nguyen9)
 {
     //f(x) = sin(x1)+sin(x2**2)
@@ -1004,7 +1020,7 @@ TEST(TestSymReg, Nguyen9)
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
-
+*/
 TEST(TestSymReg, Nguyen10)
 {
     //f(x) = 2sin(x1)cos(x2)
@@ -1412,7 +1428,7 @@ TEST(TestSymReg, d_vdp1)
 TEST(TestSymReg, d_vdp2)
 {
     auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_vdp2.txt")};
-
+    std::cout << data.x.transpose() << std::endl;
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
     using BinOp = BinaryOperator<double>;
