@@ -40,6 +40,38 @@ class FitWorker : public QObject
         Eigen::ArrayXd y;
 };
 
+class ChartWithTooltip : public QChartView
+{
+    Q_OBJECT
+
+    public:
+        ChartWithTooltip(QChart* chart, QWidget* parent = nullptr)
+            : QChartView(chart, parent), tooltip(new QGraphicsSimpleTextItem(chart))
+        {
+            setMouseTracking(true);
+        }
+
+    public slots:
+        void showPointTooltip(QPointF point, bool state)
+        {
+            if (state)
+            {
+                QString text = QString("x = %1\ny = %2")
+                                   .arg(point.x(), 0, 'f', 2)
+                                   .arg(point.y(), 0, 'f', 2);
+                tooltip->setText(text);
+                QPointF pos = chart()->mapToPosition(point);
+                tooltip->setPos(pos + QPointF(10, -30));
+                tooltip->show();
+            }
+            else
+                tooltip->hide();
+        }
+
+    private:
+        QGraphicsSimpleTextItem *tooltip;
+};
+
 class DynamicChart : public QObject
 {
     Q_OBJECT
@@ -47,7 +79,7 @@ class DynamicChart : public QObject
     public:
         double bestLoss = std::numeric_limits<double>::infinity();
 
-        DynamicChart(QChart *chart) : chart(chart), x{Eigen::ArrayXd::LinSpaced(100, 2, 101)}
+        DynamicChart(QChart *chart, ChartWithTooltip *chartView) : chart(chart), chartView(chartView), x{Eigen::ArrayXd::LinSpaced(100, 2, 101)}
         {
         }
 
@@ -69,6 +101,9 @@ class DynamicChart : public QObject
                     series->append(x[i], y[i]);
 
                 chart->addSeries(series);
+
+                QObject::connect(series, &QLineSeries::hovered,
+                                 chartView, &ChartWithTooltip::showPointTooltip);
             }
         }
 
@@ -84,6 +119,9 @@ class DynamicChart : public QObject
                 series->append(x[i], y[i]);
 
             chart->addSeries(series);
+
+            QObject::connect(series, &QLineSeries::hovered,
+                             chartView, &ChartWithTooltip::showPointTooltip);
             
             chart->createDefaultAxes();
             
@@ -142,6 +180,7 @@ class DynamicChart : public QObject
 
     private:
         QChart* chart;
+        ChartWithTooltip* chartView;
         Eigen::ArrayXd x;
         std::unique_ptr<SymbolicRegressor<double> > srPtr;
         FitWorker* worker;
@@ -159,13 +198,13 @@ int main(int argc, char *argv[])
     chart->createDefaultAxes();
     chart->setTitle("Primes chart");
 
-    QChartView* chartView = new QChartView(chart);
+    ChartWithTooltip* chartView = new ChartWithTooltip(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
 
     chartView->resize(600, 400);
     chartView->show();
 
-    DynamicChart dynamicChart(chart);
+    DynamicChart dynamicChart(chart, chartView);
 
     QTimer::singleShot(0, &dynamicChart, &DynamicChart::start);
 
