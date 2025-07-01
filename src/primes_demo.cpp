@@ -85,6 +85,19 @@ class DynamicChart : public QObject
 
             chart->addSeries(series);
             
+            chart->createDefaultAxes();
+            
+            for (auto const& a: chart->axes())
+            {
+                if (auto *axis = qobject_cast<QValueAxis*>(a))
+                {
+                    axis->setGridLineVisible(true);
+                    axis->setMinorTickCount(4);
+                    axis->setMinorGridLineVisible(true);
+                    axis->setLabelFormat("%d");
+                }
+            }
+            
             using Var = Variable<double>;
             using UnOp = UnaryOperator<double>;
             using BinOp = BinaryOperator<double>;
@@ -151,7 +164,7 @@ int main(int argc, char *argv[])
 
     chartView->resize(600, 400);
     chartView->show();
-    
+
     DynamicChart dynamicChart(chart);
 
     QTimer::singleShot(0, &dynamicChart, &DynamicChart::start);
