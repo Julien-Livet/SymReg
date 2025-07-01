@@ -373,12 +373,12 @@ namespace sr
                 return p;
             }
 
-            T fit(Eigen::Array<T, Eigen::Dynamic, 1> const& y, std::vector<T> const& paramValues = std::vector<T>{}, T epsLoss = 1e-6, bool verbose = false)
+            T fit(Eigen::Array<T, Eigen::Dynamic, 1> const& y, std::vector<T> const& paramValues = std::vector<T>{}, T epsLoss = 1e-6, bool verbose = false, size_t exhaustiveLimit = 1e4)
             {
                 std::vector<double> params;
                 this->params(params);
 
-                if (paramValues.size())
+                if (paramValues.size() && std::pow(paramValues.size(), params.size()) < exhaustiveLimit)
                 {
                     params = optimizeParamsParallel(paramValues, params.size(), *this, y);
 
@@ -545,20 +545,20 @@ namespace sr
         T globalBestCost = std::numeric_limits<T>::infinity();
         std::vector<T> globalBestParams(n);
 
-        //#pragma omp parallel //TODO: to uncomment
+        #pragma omp parallel
         {
             T localBestCost = std::numeric_limits<T>::infinity();
             std::vector<T> localBestParams(n);
             std::vector<T> currentCombination(n);
 
-            //#pragma omp for nowait //TODO: to uncomment
+            #pragma omp for nowait
             for (size_t i = 0; i < paramValues.size(); ++i)
             {
                 currentCombination[0] = paramValues[i];
                 generateAndEvaluate(paramValues, n, currentCombination, 1, localBestCost, localBestParams, expression, y);
             }
 
-            //#pragma omp critical //TODO: to uncomment
+            #pragma omp critical
             {
                 if (localBestCost < globalBestCost)
                 {

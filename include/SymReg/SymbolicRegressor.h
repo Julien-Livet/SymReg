@@ -20,6 +20,7 @@ namespace sr
         public:
             T eps = 1e-6;
             T epsLoss = 1e-12;
+            size_t exhaustiveLimit = 1e4;
 
             SymbolicRegressor(std::vector<Variable<T> > const& variables,
                               std::vector<UnaryOperator<T> > const& un_ops = std::vector<UnaryOperator<T> >{},
@@ -60,7 +61,7 @@ namespace sr
                 for (auto const& v : variables_)
                 {
                     Expression<T> e{v};
-                    auto cost{e.fit(y, paramValues_, epsLoss, verbose_)};
+                    auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit)};
 
                     std::vector<T> params;
                     e.params(params);
@@ -80,7 +81,7 @@ namespace sr
                 for (auto const& expression : extraExpressions_)
                 {
                     Expression<T> e{expression};
-                    auto cost{e.fit(y, paramValues_, epsLoss, verbose_)};
+                    auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit)};
 
                     std::vector<T> params;
                     e.params(params);
@@ -126,7 +127,7 @@ namespace sr
                     #pragma omp parallel
                     {
                         size_t const n{expressions.size()};
-                        std::vector<Expression<T>> localExpressions;
+                        std::vector<Expression<T> > localExpressions;
                         std::vector<double> localCosts;
                         std::map<size_t, std::vector<size_t> > localUnIndices;
 
@@ -150,7 +151,7 @@ namespace sr
                                     if (count < maxCount)
                                     {
                                         Expression<T> e{un_ops_[k], expressions[j]};
-                                        auto cost{e.fit(y, paramValues_, epsLoss, verbose_)};
+                                        auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit)};
 
                                         std::vector<T> params;
                                         e.params(params);
@@ -240,7 +241,7 @@ namespace sr
                                         if (count1 < maxCount && count2 < maxCount)
                                         {
                                             Expression<T> e{bin_ops_[k], expressions[j1], expressions[j2]};
-                                            auto cost{e.fit(y, paramValues_, epsLoss, verbose_)};
+                                            auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit)};
 
                                             std::vector<T> params;
                                             e.params(params);
@@ -250,7 +251,7 @@ namespace sr
 
                                             localExpressions.emplace_back(e);
                                             localCosts.emplace_back(cost);
-                    
+
                                             callback_(e, cost);
 
                                             if (cost < epsLoss)
