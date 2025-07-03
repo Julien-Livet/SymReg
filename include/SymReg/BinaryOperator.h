@@ -18,7 +18,7 @@ namespace sr
             enum Symmetry
             {
                 NoSymmetry = 0,
-                NonStrictSymmetry= 1,
+                NonStrictSymmetry = 1,
                 StrictSymmetry = 2
             };
 
@@ -101,6 +101,11 @@ namespace sr
                 return BinaryOperator{"pow",
                                       [] (auto const& x, auto const& y) {return x.pow(y);},
                                       [] (auto const& x, auto const& y) {return x.pow(y);}};
+            }
+            
+            bool operator==(BinaryOperator<T> const& other) const
+            {
+                return name_ == other.name_;
             }
 
         private:

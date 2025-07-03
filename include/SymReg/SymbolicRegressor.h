@@ -20,7 +20,7 @@ namespace sr
         public:
             T eps = 1e-6;
             T epsLoss = 1e-12;
-            size_t exhaustiveLimit = 1e4;
+            size_t exhaustiveLimit = 1e5;
 
             SymbolicRegressor(std::vector<Variable<T> > const& variables,
                               std::vector<UnaryOperator<T> > const& un_ops = std::vector<UnaryOperator<T> >{},
@@ -30,11 +30,12 @@ namespace sr
                               std::map<std::string, size_t> const& operatorDepth = std::map<std::string, size_t>{},
                               std::vector<Expression<T> > const& extraExpressions = std::vector<Expression<T> >{},
                               bool verbose = false,
-                              std::function<void(Expression<T> const&, T const&)> const& callback = [] (Expression<T> const&, T const&) {})
+                              std::function<void(Expression<T> const&, T const&)> const& callback = [] (Expression<T> const&, T const&) {},
+                              bool discreteParams = true)
                 : variables_{variables}, un_ops_{un_ops}, bin_ops_{bin_ops},
                   niterations_{niterations}, paramValues_{paramValues},
                   operatorDepth_{operatorDepth}, extraExpressions_{extraExpressions},
-                  verbose_{verbose}, callback_(callback)
+                  verbose_{verbose}, callback_(callback), discreteParams_{discreteParams}
             {
             }
 
@@ -53,7 +54,7 @@ namespace sr
                 return bin_ops_;
             }
             
-            std::pair<T, Expression<T>> fit(Eigen::Array<T, Eigen::Dynamic, 1> const& y)
+            std::pair<T, Expression<T> > fit(Eigen::Array<T, Eigen::Dynamic, 1> const& y)
             {
                 std::vector<Expression<T> > expressions;
                 std::vector<T> costs;
@@ -61,7 +62,7 @@ namespace sr
                 for (auto const& v : variables_)
                 {
                     Expression<T> e{v};
-                    auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit)};
+                    auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_)};
 
                     std::vector<T> params;
                     e.params(params);
@@ -81,7 +82,7 @@ namespace sr
                 for (auto const& expression : extraExpressions_)
                 {
                     Expression<T> e{expression};
-                    auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit)};
+                    auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_)};
 
                     std::vector<T> params;
                     e.params(params);
@@ -151,7 +152,7 @@ namespace sr
                                     if (count < maxCount)
                                     {
                                         Expression<T> e{un_ops_[k], expressions[j]};
-                                        auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit)};
+                                        auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_)};
 
                                         std::vector<T> params;
                                         e.params(params);
@@ -241,7 +242,7 @@ namespace sr
                                         if (count1 < maxCount && count2 < maxCount)
                                         {
                                             Expression<T> e{bin_ops_[k], expressions[j1], expressions[j2]};
-                                            auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit)};
+                                            auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_)};
 
                                             std::vector<T> params;
                                             e.params(params);
@@ -313,6 +314,7 @@ namespace sr
             std::vector<Expression<T> > extraExpressions_;
             bool verbose_;
             std::function<void(Expression<T> const&, T const&)> callback_;
+            bool discreteParams_;
     };
 }
 

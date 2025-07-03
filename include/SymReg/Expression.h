@@ -3,10 +3,15 @@
 
 #include <algorithm>
 #include <any>
+#include <deque>
+#include <random>
 #include <string>
 #include <vector>
 
 #include <ceres/ceres.h>
+
+#include <mlpack/methods/kmeans/kmeans.hpp>
+#include <armadillo>
 
 #include "SymReg/BinaryOperator.h"
 #include "SymReg/UnaryOperator.h"
@@ -17,6 +22,119 @@ namespace sr
     bool isSymbol(std::string const& s)
     {
         return s == "+" || s == "-" || s == "*" || s == "/";
+    }
+
+    template <typename T>
+    std::vector<std::vector<T > > discreteValues(size_t n, size_t m, std::vector<T> const& paramValues)
+    {
+        std::vector<std::vector<T> > values;
+        values.reserve(n);
+
+        for (size_t i{0}; i < n; ++i)
+        {
+            std::vector<T> v;
+
+            std::random_device rd;
+            std::uniform_int_distribution<> d(0, paramValues.size());
+
+            for (size_t j{0}; j < m; ++j)
+                v.emplace_back(paramValues[d(rd)]);
+
+            values.emplace_back(v);
+        }
+
+        return values;
+    }
+
+    template <typename T>
+    std::vector<T> roundParams(std::vector<T> const& params, std::vector<T> const& paramValues)
+    {
+        if (paramValues.empty())
+            return params;
+
+        std::vector<T> rounded;
+        
+        rounded.reserve(params.size());
+
+        for (auto const& p : params)
+        {
+            auto bestVal = paramValues[0];
+            auto bestDist = std::abs(p - bestVal);
+
+            for (const T& v : paramValues)
+            {
+                auto const dist = std::abs(p - v);
+
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    bestVal = v;
+                }
+            }
+
+            rounded.emplace_back(bestVal);
+        }
+
+        return rounded;
+    }
+
+    template <typename T>
+    struct ScoredVector
+    {
+        std::vector<T> values;
+        T distance;
+
+        bool operator<(const ScoredVector<T>& other) const
+        {
+            return distance < other.distance;
+        }
+    };
+
+    template <typename T>
+    void findBestCombinations(
+        std::vector<T> const& paramValues,
+        size_t n,
+        std::vector<T> const& target,
+        size_t maxResults,
+        std::vector<std::vector<T> >& bestCombinations)
+    {
+        std::deque<ScoredVector<T> > topResults;
+
+        std::vector<T> current(n);
+
+        std::function<void(std::size_t)> recurse = [&] (size_t index)
+        {
+            if (index == n)
+            {
+                std::vector<T> diff(n);
+
+                for (size_t i = 0; i < n; ++i)
+                    diff[i] = current[i] - target[i];
+
+                auto const dist = boost::math::tools::l2_norm(diff);
+
+                auto const it = std::upper_bound(topResults.begin(), topResults.end(), ScoredVector<T>{current, dist});
+                topResults.insert(it, ScoredVector<T>{current, dist});
+
+                if (topResults.size() > maxResults)
+                    topResults.pop_back();
+
+                return;
+            }
+
+            for (auto const& val : paramValues)
+            {
+                current[index] = val;
+                recurse(index + 1);
+            }
+        };
+
+        recurse(0);
+
+        bestCombinations.clear();
+
+        for (const auto& entry : topResults)
+            bestCombinations.push_back(entry.values);
     }
 
     std::string expr(std::string const& s)
@@ -243,32 +361,32 @@ namespace sr
                 return s;
             }
 
-            std::any const& operand1() const
+            auto const& operand1() const
             {
                 return operand1_;
             }
 
-            std::any& operand1()
+            auto& operand1()
             {
                 return operand1_;
             }
 
-            std::any const& operand2() const
+            auto const& operand2() const
             {
                 return operand2_;
             }
 
-            std::any& operand2()
+            auto& operand2()
             {
                 return operand2_;
             }
 
-            std::any const& op() const
+            auto const& op() const
             {
                 return op_;
             }
 
-            std::any& op()
+            auto& op()
             {
                 return op_;
             }
@@ -373,24 +491,12 @@ namespace sr
                 return p;
             }
 
-            T fit(Eigen::Array<T, Eigen::Dynamic, 1> const& y, std::vector<T> const& paramValues = std::vector<T>{}, T epsLoss = 1e-6, bool verbose = false, size_t exhaustiveLimit = 1e4)
+            T fit(Eigen::Array<T, Eigen::Dynamic, 1> const& y, std::vector<T> const& paramValues = std::vector<T>{}, T epsLoss = 1e-6, bool verbose = false, size_t exhaustiveLimit = 1e5, bool discreteParams = true)
             {
                 std::vector<double> params;
                 this->params(params);
-
-                if (paramValues.size() && std::pow(paramValues.size(), params.size()) < exhaustiveLimit)
-                {
-                    params = optimizeParamsParallel(paramValues, params.size(), *this, y);
-
-                    applyParams(params);
-
-                    auto const x{eval()};
-                    auto const cost{(y - x).square().sum()};
-
-                    if (cost < epsLoss)
-                        return cost;
-                }
-
+                auto const possibilities{std::pow(paramValues.size(), params.size())};
+                
                 auto const n{params.size()};
 
                 std::vector<double*> param_ptrs(n);
@@ -413,11 +519,117 @@ namespace sr
                 options.minimizer_progress_to_stdout = verbose;
                 options.logging_type = ceres::SILENT;
 
+                if (paramValues.size())
+                {
+                    size_t const count{1000};
+                    size_t const K{20};
+                
+                    auto const v{discreteValues(count, params.size(), paramValues)};
+                    arma::mat data(count, params.size());
+
+                    for (size_t i{0}; i < count; ++i)
+                    {
+                        for (size_t j{0}; j < params.size(); ++j)
+                            data(i, j) = v[i][j];
+                    }
+
+                    arma::Row<size_t> assignments;
+                    arma::mat centroids;
+
+                    mlpack::KMeans<> kmeans;
+                    kmeans.Cluster(data, K, assignments, centroids);
+                    
+                    std::vector<T> bestParams(params);
+                    T bestCost{std::numeric_limits<T>::infinity()};
+                    
+                    for (size_t i{0}; i < count; ++i)
+                    {
+                        for (size_t j{0}; j < params.size(); ++j)
+                            params[j] = data(i, j);
+                            
+                        applyParams(params);
+                        
+                        ceres::Solver::Summary summary;
+                        ceres::Solve(options, &problem, &summary);
+                        
+                        if (summary.final_cost < bestCost)
+                        {
+                            bestCost = summary.final_cost;
+                            bestParams = params;
+                            
+                            if (bestCost < epsLoss)
+                                break;
+                        }
+                    }
+
+                    auto const roundedParams{roundParams(bestParams, paramValues)};
+
+                    applyParams(roundedParams);
+                    
+                    auto const x{eval()};
+                    auto const cost{(y - x).square().sum()};
+                    
+                    return cost;
+                }
+/*
+                if (paramValues.size() && possibilities < exhaustiveLimit)
+                {
+                    params = optimizeParamsParallel(paramValues, params.size(), *this, y, epsLoss);
+
+                    applyParams(params);
+
+                    auto const x{eval()};
+                    auto const cost{(y - x).square().sum()};
+
+                    if (discreteParams)
+                        return cost;
+                }
+*/
                 ceres::Solver::Summary summary;
                 ceres::Solve(options, &problem, &summary);
 
-                applyParams(params);
+                //applyParams(params);
+/*
+                if (!discreteParams && summary.final_cost < epsLoss)
+                    return summary.final_cost;
 
+                if (discreteParams || possibilities >= exhaustiveLimit)
+                {
+                    auto const roundedParams{roundParams(params, paramValues)};
+
+                    std::vector<std::vector<T> > combinations;
+
+                    findBestCombinations(paramValues, params.size(), roundedParams, exhaustiveLimit, combinations);
+
+                    auto bestParams{roundedParams};
+                    applyParams(bestParams);
+                    auto x{eval()};
+                    auto bestCost{(y - x).square().sum()};
+
+                    #pragma omp for nowait
+                    for (size_t i = 0; i < combinations.size(); ++i)
+                    {
+                        auto const& c{combinations[i]};
+                        auto e{*this};
+                        e.applyParams(c);
+                        x = e.eval();
+                        auto const cost{(y - x).square().sum()};
+
+                        if (cost < bestCost)
+                        {
+                            bestCost = cost;
+                            bestParams = c;
+                        }
+
+                        if (cost < epsLoss)
+                            i = combinations.size();
+                    }
+
+                    applyParams(bestParams);
+
+                    return bestCost;
+                }
+*/
                 return summary.final_cost;
             }
 

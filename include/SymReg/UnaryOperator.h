@@ -176,6 +176,11 @@ namespace sr
                                      [] (auto const& x) {return x.inverse();},
                                      [] (auto const& x) {return x.inverse();}};
             }
+            
+            bool operator==(UnaryOperator<T> const& other) const
+            {
+                return name_ == other.name_;
+            }
 
         private:
             std::string name_;

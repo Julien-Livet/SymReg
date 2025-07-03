@@ -28,6 +28,11 @@ namespace sr
             {
                 return value_;
             }
+            
+            bool operator==(Variable<T> const& other) const
+            {
+                return name_ == other.name_;
+            }
 
         private:
             std::string name_;

@@ -33,7 +33,7 @@ class FitWorker : public QObject
         }
 
     signals:
-        void finished(double loss, Expression<double> expr);
+        void finished(double loss, Expression<double> const& expr);
 
     private:
         SymbolicRegressor<double>* sr;
@@ -89,14 +89,14 @@ class DynamicChart : public QObject
             if (loss < bestLoss)
             {
                 bestLoss = loss;
-                
+
                 std::cout << loss << " " << e.optStr() << std::endl;
 
                 auto const y{e.eval()};
 
                 QLineSeries *series = new QLineSeries();
                 series->setName(QString::fromStdString(e.optStr()));
-                
+
                 for (int i{0}; i < x.size(); ++i)
                     series->append(x[i], y[i]);
 
@@ -116,7 +116,7 @@ class DynamicChart : public QObject
 
             QLineSeries *series = new QLineSeries();
             series->setName("p(n)");
-            
+
             for (int i{0}; i < x.size(); ++i)
                 series->append(x[i], y[i]);
 
@@ -124,9 +124,9 @@ class DynamicChart : public QObject
 
             QObject::connect(series, &QLineSeries::hovered,
                              chartView, &ChartWithTooltip::showPointTooltip);
-            
+
             chart->createDefaultAxes();
-            
+
             for (auto const& a: chart->axes())
             {
                 if (auto *axis = qobject_cast<QValueAxis*>(a))
@@ -137,7 +137,7 @@ class DynamicChart : public QObject
                     axis->setLabelFormat("%d");
                 }
             }
-            
+
             using Var = Variable<double>;
             using UnOp = UnaryOperator<double>;
             using BinOp = BinaryOperator<double>;
@@ -146,8 +146,6 @@ class DynamicChart : public QObject
 
             std::map<std::string, size_t> operatorDepth;
             operatorDepth["log"] = 2;
-            operatorDepth["*"] = 4;
-            operatorDepth["+"] = 4;
 
             srPtr = std::make_unique<SymbolicRegressor<double> >(std::vector<Var>{Var("n", x)},
                                                                  std::vector<UnOp>{UnOp::log()},
@@ -155,12 +153,13 @@ class DynamicChart : public QObject
                                                                  2,
                                                                  paramsValue,
                                                                  operatorDepth,
-                                                                 std::vector<Expression<double>>{},
+                                                                 std::vector<Expression<double> >{},
                                                                  false,
-                                                                 [this](Expression<double> const& e, double const& loss)
+                                                                 [this] (Expression<double> const& e, double const& loss)
                                                                  {
                                                                      QMetaObject::invokeMethod(this, [this, e, loss] () { this->callback(e, loss); }, Qt::QueuedConnection);
-                                                                 });
+                                                                 },
+                                                                 false/*true*/);
 
             worker = new FitWorker(srPtr.get());
             worker->setTargetY(y);
@@ -169,16 +168,17 @@ class DynamicChart : public QObject
             worker->moveToThread(thread);
 
             connect(thread, &QThread::started, worker, &FitWorker::run);
-            connect(worker, &FitWorker::finished, this, [this](double loss, Expression<double> expr)
-            {
-                std::cout << "Optimization end" << std::endl;
-                callback(expr, loss);
-                thread->quit();
-                worker->deleteLater();
-                thread->deleteLater();
-            });
+            connect(worker, &FitWorker::finished, this,
+                    [this] (double loss, Expression<double> const& expr)
+                    {
+                        std::cout << "Optimization end" << std::endl;
+                        callback(expr, loss);
+                        thread->quit();
+                        worker->deleteLater();
+                        thread->deleteLater();
+                    });
 
-        thread->start();
+            thread->start();
     }
 
     private:

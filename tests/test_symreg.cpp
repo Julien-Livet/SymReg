@@ -154,6 +154,10 @@ TEST(TestSymReg, 5x1Add7x2Addx3Add8)
 
     auto const p{sr.fit(y)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -172,6 +176,10 @@ TEST(TestSymReg, LinearFit)
     auto const y(2 * x + 3);
 
     auto const p{sr.fit(y)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -203,6 +211,10 @@ TEST(TestSymReg, LogFit)
 
     auto const p{sr.fit(y)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -231,6 +243,10 @@ TEST(TestSymReg, Test1)
                          3};
 
     auto const p{sr.fit(y)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -267,6 +283,10 @@ TEST(TestSymReg, Test2)
                          extraExpressions};
 
     auto const p{sr.fit(y)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -309,6 +329,10 @@ TEST(TestSymReg, Test3)
 
     auto const p{sr.fit(y)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -338,6 +362,10 @@ TEST(TestSymReg, Test4)
                          3};
 
     auto const p{sr.fit(z)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -370,6 +398,10 @@ TEST(TestSymReg, Test5)
 
     auto const p{sr.fit(y)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -399,6 +431,10 @@ TEST(TestSymReg, Test6)
                          paramsValue};
 
     auto const p{sr.fit(y)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -447,6 +483,10 @@ TEST(TestSymReg, PySR)
 
     auto const p{sr.fit(y)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -481,6 +521,10 @@ TEST(TestSymReg, GPLearn)
                          extraExpressions};
 
     auto const p{sr.fit(y)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -528,6 +572,10 @@ TEST(TestSymReg, Line)
 
     auto const p{sr.fit(zero)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -571,6 +619,10 @@ TEST(TestSymReg, Circle)
     zero *= 0;
 
     auto const p{sr.fit(zero)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -626,6 +678,10 @@ TEST(TestSymReg, Plane)
 
     auto const p{sr.fit(zero)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -673,6 +729,10 @@ TEST(TestSymReg, Sphere)
 
     auto const p{sr.fit(zero)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -700,6 +760,10 @@ TEST(TestSymReg, x1Mulx2)
                          1};
 
     auto const p{sr.fit(y)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -732,6 +796,10 @@ TEST(TestSymReg, Nguyen1)
 
     auto const p{sr.fit(y)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -762,6 +830,10 @@ TEST(TestSymReg, Nguyen2)
                          paramsValue};
 
     auto const p{sr.fit(y)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -794,6 +866,10 @@ TEST(TestSymReg, Nguyen3)
 
     auto const p{sr.fit(y)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -825,9 +901,13 @@ TEST(TestSymReg, Nguyen4)
 
     auto const p{sr.fit(y)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
-/*
+
 TEST(TestSymReg, Nguyen5)
 {
     //f(x) = sin(x**2)cos(x)-1
@@ -850,8 +930,8 @@ TEST(TestSymReg, Nguyen5)
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["sin"] = 1;
     operatorDepth["cos"] = 1;
-    operatorDepth["*"] = 2;
     std::vector<Expression<double> > extraExpressions;
+    extraExpressions.emplace_back(Expression<double>(BinOp::times(), Var("x", x), Var("x", x)));
     //extraExpressions.emplace_back(Expression<double>(BinOp::times(),
     //                                                 Expression<double>(UnOp::cos(), Var("x", x)),
     //                                                 Expression<double>(UnOp::sin(), Expression<double>(BinOp::times(),
@@ -865,12 +945,17 @@ TEST(TestSymReg, Nguyen5)
                          paramsValue,
                          operatorDepth,
                          extraExpressions};
+    //sr.exhaustiveLimit = 1e6; //Optimal expression can generate 3^14 combinations
 
     auto const p{sr.fit(y)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
-*/
+
 TEST(TestSymReg, Nguyen6)
 {
     //f(x) = sin(x)+sin(x+x**2)
@@ -892,17 +977,26 @@ TEST(TestSymReg, Nguyen6)
     std::vector<double> const paramsValue{0, 1};
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["sin"] = 1;
-    operatorDepth["*"] = 1;
-    operatorDepth["+"] = 1;
+    std::vector<Expression<double> > extraExpressions;
+    //extraExpressions.emplace_back(Expression<double>(BinOp::plus(),
+    //                                                 Expression<double>(UnOp::sin(), Var("x", x)),
+    //                                                 Expression<double>(UnOp::sin(), Expression<double>(BinOp::times(),
+    //                                                                                                    Var("x", x),
+    //                                                                                                    Var("x", x)))));
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
                          std::vector<UnOp>{UnOp::sin()},
                          std::vector<BinOp>{BinOp::times(), BinOp::plus()},
                          3,
                          paramsValue,
-                         operatorDepth};
+                         operatorDepth,
+                         extraExpressions};
 
     auto const p{sr.fit(y)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -929,17 +1023,26 @@ TEST(TestSymReg, Nguyen7)
     std::vector<double> const paramsValue{0, 1};
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["log"] = 1;
-    operatorDepth["*"] = 1;
-    operatorDepth["+"] = 1;
+    std::vector<Expression<double> > extraExpressions;
+    //extraExpressions.emplace_back(Expression<double>(BinOp::plus(),
+    //                                                 Expression<double>(UnOp::log(), Var("x", x)),
+    //                                                 Expression<double>(UnOp::log(), Expression<double>(BinOp::times(),
+    //                                                                                                    Var("x", x),
+    //                                                                                                    Var("x", x)))));
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
                          std::vector<UnOp>{UnOp::log()},
                          std::vector<BinOp>{BinOp::times(), BinOp::plus()},
                          3,
                          paramsValue,
-                         operatorDepth};
+                         operatorDepth,
+                         extraExpressions};
 
     auto const p{sr.fit(y)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -973,9 +1076,13 @@ TEST(TestSymReg, Nguyen8)
 
     auto const p{sr.fit(y)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
-/*
+
 TEST(TestSymReg, Nguyen9)
 {
     //f(x) = sin(x1)+sin(x2**2)
@@ -999,9 +1106,8 @@ TEST(TestSymReg, Nguyen9)
     std::vector<double> const paramsValue{0, 1};
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["sin"] = 1;
-    operatorDepth["*"] = 1;
-    operatorDepth["+"] = 1;
     std::vector<Expression<double> > extraExpressions;
+    extraExpressions.emplace_back(Expression<double>(BinOp::times(), Var("x2", x2), Var("x2", x2)));
     //extraExpressions.emplace_back(Expression<double>(BinOp::plus(),
     //                                                 Expression<double>(UnOp::sin(), Var("x1", x1)),
     //                                                 Expression<double>(UnOp::sin(), Expression<double>(BinOp::times(),
@@ -1018,9 +1124,13 @@ TEST(TestSymReg, Nguyen9)
 
     auto const p{sr.fit(y)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
-*/
+
 TEST(TestSymReg, Nguyen10)
 {
     //f(x) = 2sin(x1)cos(x2)
@@ -1054,6 +1164,10 @@ TEST(TestSymReg, Nguyen10)
                          operatorDepth};
 
     auto const p{sr.fit(y)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1090,6 +1204,10 @@ TEST(TestSymReg, Keijzer10)
 
     auto const p{sr.fit(y)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -1114,6 +1232,10 @@ TEST(TestSymReg, d_bacres1)
                          operatorDepth};
 
     auto const p{sr.fit(data.label)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1140,6 +1262,10 @@ TEST(TestSymReg, d_bacres2)
 
     auto const p{sr.fit(data.label)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -1165,6 +1291,10 @@ TEST(TestSymReg, d_barmag1)
 
     auto const p{sr.fit(data.label)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -1179,7 +1309,6 @@ TEST(TestSymReg, d_barmag2)
     std::vector<double> const paramsValue{-1, 0, 1, 0.5};
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["sin"] = 1;
-    operatorDepth["+"] = 2;
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
                          std::vector<UnOp>{UnOp::sin()},
@@ -1189,6 +1318,10 @@ TEST(TestSymReg, d_barmag2)
                          operatorDepth};
 
     auto const p{sr.fit(data.label)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1216,6 +1349,10 @@ TEST(TestSymReg, d_glider1)
 
     auto const p{sr.fit(data.label)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -1226,7 +1363,7 @@ TEST(TestSymReg, d_glider2)
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
     using BinOp = BinaryOperator<double>;
-
+/*
     std::vector<double> const paramsValue;//{-1, 0, 1};
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["cos"] = 1;
@@ -1239,8 +1376,27 @@ TEST(TestSymReg, d_glider2)
                          3,
                          paramsValue,
                          operatorDepth};
+*/
+    auto const cy{data.y.cos()};
+    auto const sy{data.y.sin()};
+
+    std::vector<double> const paramsValue;//{-1, 0, 1};
+    std::map<std::string, size_t> operatorDepth;
+    operatorDepth["/"] = 1;
+    operatorDepth["+"] = 2;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("cy", cy), Var("sy", sy)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::plus(), BinOp::divide()},
+                         3,
+                         paramsValue,
+                         operatorDepth};
 
     auto const p{sr.fit(data.label)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1267,6 +1423,10 @@ TEST(TestSymReg, d_lv1)
 
     auto const p{sr.fit(data.label)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -1291,6 +1451,10 @@ TEST(TestSymReg, d_lv2)
                          operatorDepth};
 
     auto const p{sr.fit(data.label)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1318,6 +1482,10 @@ TEST(TestSymReg, d_predprey1)
 
     auto const p{sr.fit(data.label)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -1343,6 +1511,10 @@ TEST(TestSymReg, d_predprey2)
                          operatorDepth};
 
     auto const p{sr.fit(data.label)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1370,6 +1542,10 @@ TEST(TestSymReg, d_shearflow1)
 
     auto const p{sr.fit(data.label)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -1380,7 +1556,7 @@ TEST(TestSymReg, d_shearflow2)
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
     using BinOp = BinaryOperator<double>;
-
+/*
     std::vector<double> const paramsValue{0, 1, 0.1};
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["sin"] = 1;
@@ -1394,8 +1570,29 @@ TEST(TestSymReg, d_shearflow2)
                          3,
                          paramsValue,
                          operatorDepth};
+*/
+    auto const cx{data.x.cos()};
+    auto const sx{data.x.sin()};
+    auto const cy{data.y.cos()};
+    auto const sy{data.y.sin()};
+
+    std::vector<double> const paramsValue{0, 1, 0.1};
+    std::map<std::string, size_t> operatorDepth;
+    operatorDepth["+"] = 2;
+    operatorDepth["*"] = 2;
+
+    SymbolicRegressor sr{std::vector<Var>{Var("cx", cx), Var("sx", sx), Var("cy", cy), Var("sy", sy)},
+                         std::vector<UnOp>{},
+                         std::vector<BinOp>{BinOp::times(), BinOp::plus()},
+                         3,
+                         paramsValue,
+                         operatorDepth};
 
     auto const p{sr.fit(data.label)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1422,6 +1619,10 @@ TEST(TestSymReg, d_vdp1)
 
     auto const p{sr.fit(data.label)};
 
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
+
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
 
@@ -1446,6 +1647,10 @@ TEST(TestSymReg, d_vdp2)
                          operatorDepth};
 
     auto const p{sr.fit(data.label)};
+
+    std::cout << p.first << std::endl;
+    std::cout << expr(p.second.str()) << std::endl;
+    std::cout << p.second.optStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
