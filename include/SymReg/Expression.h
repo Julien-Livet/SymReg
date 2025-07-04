@@ -268,7 +268,8 @@ namespace sr
              : operand1Type_{other.operand1Type_}, operand1Variable_{}, operand1Expression_{},
                operand2Type_{other.operand2Type_}, operand2Variable_{}, operand2Expression_{},
                operatorType_{other.operatorType_}, unaryOperator_{}, binaryOperator_{},
-               aFixed{other.aFixed}, bFixed{other.bFixed}
+               aFixed{other.aFixed}, bFixed{other.bFixed}, a{other.a}, b{other.b},
+               ja{other.ja}, jb{other.jb}     
             {
                 if (other.operand1Variable_)
                     operand1Variable_ = std::make_unique<Variable<T> >(*other.operand1Variable_);
@@ -296,6 +297,10 @@ namespace sr
                 operatorType_ = other.operatorType_;
                 aFixed = other.aFixed;
                 bFixed = other.bFixed;
+                a = other.a;
+                b = other.b;
+                ja = other.ja;
+                jb = other.jb;
 
                 if (other.operand1Variable_)
                     operand1Variable_ = std::make_unique<Variable<T> >(*other.operand1Variable_);
@@ -650,10 +655,10 @@ namespace sr
                     auto const roundedParams{roundParams(bestParams, paramValues)};
 
                     applyParams(roundedParams);
-                    
+
                     auto const x{eval()};
                     auto const cost{(y - x).square().sum()};
-                    
+
                     return cost;
                 }
 /*
