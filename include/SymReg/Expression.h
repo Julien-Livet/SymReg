@@ -332,19 +332,19 @@ namespace sr
                 if (operand1Type_ != other.operand1Type_)
                     return false;
 
-                if (operand1Variable_ && *operand1Variable_ != *other.operand1Variable_)
+                if (operand1Type_ == VariableOperand && *operand1Variable_ != *other.operand1Variable_)
                     return false;
 
-                if (operand1Expression_ && *operand1Expression_ != *other.operand1Expression_)
+                if (operand1Type_ == ExpressionOperand && *operand1Expression_ != *other.operand1Expression_)
                     return false;
 
                 if (operand2Type_ != other.operand2Type_)
                     return false;
 
-                if (operand2Variable_ && *operand2Variable_ != *other.operand2Variable_)
+                if (operand2Type_ == VariableOperand && *operand2Variable_ != *other.operand2Variable_)
                     return false;
 
-                if (operand2Expression_ && *operand2Expression_ != *other.operand2Expression_)
+                if (operand2Type_ == ExpressionOperand && *operand2Expression_ != *other.operand2Expression_)
                     return false;
 
                 return true;
