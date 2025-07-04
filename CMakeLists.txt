@@ -1,15 +1,18 @@
 cmake_minimum_required(VERSION 3.10)
 project(SymReg)
 
-set(CMAKE_BUILD_TYPE Release)
-#set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   add_compile_options(
-    -O3
+#    -O3
     -march=native
-    -ffast-math
-    -DNDEBUG
+#    -ffast-math
+#    -DNDEBUG
+    -fsanitize=address,undefined
+    -g
+    -O1
   )
 endif()
 
@@ -37,11 +40,11 @@ add_compile_definitions(EIGEN_NO_DEBUG)
 set(CMAKE_AUTOMOC ON)
 
 add_executable(primes_demo src/primes_demo.cpp)
-target_link_libraries(primes_demo Ceres::ceres OpenMP::OpenMP_CXX Qt5::Widgets Qt5::Charts armadillo)
+target_link_libraries(primes_demo asan ubsan Ceres::ceres OpenMP::OpenMP_CXX Qt5::Widgets Qt5::Charts armadillo)
 
 enable_testing()
 add_executable(test_symreg tests/test_symreg.cpp)
-target_link_libraries(test_symreg Ceres::ceres CURL::libcurl gtest gtest_main OpenMP::OpenMP_CXX armadillo)
+target_link_libraries(test_symreg asan ubsan Ceres::ceres CURL::libcurl gtest gtest_main OpenMP::OpenMP_CXX armadillo)
 
 math(EXPR TIMEOUT "3 * 60 * 60")
 add_test(NAME TestSymReg COMMAND test_symreg)

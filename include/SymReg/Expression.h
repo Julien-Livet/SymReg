@@ -30,12 +30,13 @@ namespace sr
         std::vector<std::vector<T> > values;
         values.reserve(n);
 
+        std::random_device rd;
+        std::uniform_int_distribution<> d(0, paramValues.size() - 1);
+
         for (size_t i{0}; i < n; ++i)
         {
             std::vector<T> v;
-
-            std::random_device rd;
-            std::uniform_int_distribution<> d(0, paramValues.size());
+            v.reserve(m);
 
             for (size_t j{0}; j < m; ++j)
                 v.emplace_back(paramValues[d(rd)]);
@@ -265,7 +266,8 @@ namespace sr
             Expression(Expression<T> const& other)
              : operand1Type_{other.operand1Type_}, operand1Variable_{}, operand1Expression_{},
                operand2Type_{other.operand2Type_}, operand2Variable_{}, operand2Expression_{},
-               operatorType_{other.operatorType_}, unaryOperator_{}, binaryOperator_{}, aFixed{other.aFixed}, bFixed{other.bFixed}
+               operatorType_{other.operatorType_}, unaryOperator_{}, binaryOperator_{},
+               aFixed{other.aFixed}, bFixed{other.bFixed}
             {
                 if (other.operand1Variable_)
                     operand1Variable_ = std::make_unique<Variable<T> >(*other.operand1Variable_);
@@ -492,6 +494,7 @@ namespace sr
             {
                 if (!aFixed)
                     params.emplace_back(a);
+
                 if (!bFixed)
                     params.emplace_back(b);
 
@@ -507,6 +510,7 @@ namespace sr
             {
                 if (!aFixed)
                     params.emplace_back(ja);
+
                 if (!bFixed)
                     params.emplace_back(jb);
 
@@ -577,7 +581,6 @@ namespace sr
                 std::vector<double> params;
                 this->params(params);
                 auto const possibilities{std::pow(paramValues.size(), params.size())};
-                
                 auto const n{params.size()};
 
                 std::vector<double*> param_ptrs(n);
