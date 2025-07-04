@@ -371,7 +371,7 @@ namespace sr
 
                 if (!bFixed)
                     s += "+b";
-                
+
                 return s;
             }
 
