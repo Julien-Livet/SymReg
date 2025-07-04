@@ -10,8 +10,8 @@
 
 #include <ceres/ceres.h>
 
+#define ARMA_DONT_PRINT_FAST_MATH_WARNING
 #include <mlpack/methods/kmeans/kmeans.hpp>
-#include <armadillo>
 
 #include "SymReg/BinaryOperator.h"
 #include "SymReg/UnaryOperator.h"
@@ -181,7 +181,7 @@ namespace sr
             Expression(Variable<T> const& variable) : operand1_{variable}, operand2_{0}, op_{0}
             {
             }
-            
+
             Expression(UnaryOperator<T> const& op, Expression const& operand) : operand1_{operand}, operand2_{0}, op_{op}
             {
                 for (auto const& v: operand.opTree_)
@@ -189,7 +189,7 @@ namespace sr
 
                 opTree_.emplace_back(op.name());
             }
-            
+
             Expression(BinaryOperator<T> const& op, Expression const& operand1, Expression const& operand2)
                 : operand1_{operand1}, operand2_{operand2}, op_{op}
             {
@@ -201,7 +201,7 @@ namespace sr
 
                 opTree_.emplace_back(op.name());
 
-                if (op.name() == "+")
+                if (op.name() == "+" || op.name() == "-")
                 {
                     aFixed = true;
 
@@ -212,6 +212,12 @@ namespace sr
                     auto op2{operand2};
                     op2.bFixed = true;
                     operand2_ = op2;
+
+                    if (operand1 == operand2)
+                    {
+                        op_ = 0;
+                        operand2_ = 0;
+                    }
                 }
                 else if (op.name() == "*")
                 {
@@ -236,8 +242,54 @@ namespace sr
                     Expression<T> const add{BinaryOperator<T>::plus(), *this,
                                             Expression<T>{BinaryOperator<T>::plus(), op1_, op2_}};
 
-                    *this = add;
+                    *this = std::move(add);
                 }
+            }
+
+            bool operator==(Expression<T> const& other) const
+            {
+                if (op_.type() != other.op_.type())
+                    return false;
+
+                if (op_.type() == typeid(BinaryOperator<T>) && std::any_cast<BinaryOperator<T> >(op_).symmetry == BinaryOperator<T>::NonStrictSymmetry)
+                {
+                    if (!(operand1_.type() == other.operand2_.type() && operand2_.type() == other.operand1_.type()))
+                        return false;
+
+                    if (!(std::any_cast<Expression<T> >(operand1_) == std::any_cast<Expression<T> >(other.operand2_)
+                          && std::any_cast<Expression<T> >(operand2_) == std::any_cast<Expression<T> >(other.operand1_)))
+                        return false;
+                }
+
+                if (operand1_.type() != other.operand1_.type())
+                    return false;
+
+                if (operand1_.type() == typeid(Variable<T>))
+                {
+                    if (std::any_cast<Variable<T> >(operand1_) != std::any_cast<Variable<T> >(other.operand1_))
+                        return false;
+                }
+                else if (operand1_.type() == typeid(Expression<T>))
+                {
+                    if (std::any_cast<Expression<T> >(operand1_) != std::any_cast<Expression<T> >(other.operand1_))
+                        return false;
+                }
+
+                if (operand2_.type() != other.operand2_.type())
+                    return false;
+
+                if (operand2_.type() == typeid(Variable<T>))
+                {
+                    if (std::any_cast<Variable<T> >(operand2_) != std::any_cast<Variable<T> >(other.operand2_))
+                        return false;
+                }
+                else if (operand1_.type() == typeid(Expression<T>))
+                {
+                    if (std::any_cast<Expression<T> >(operand2_) != std::any_cast<Expression<T> >(other.operand2_))
+                        return false;
+                }
+
+                return true;
             }
 
             Eigen::Array<T, Eigen::Dynamic, 1> eval() const
@@ -252,7 +304,12 @@ namespace sr
                     b_ = 0;
 
                 if (op_.type() == typeid(int))
-                    return a_ * std::any_cast<Variable<T> >(operand1_).value() + b_;
+                {
+                    if (operand1_.type() == typeid(Variable<T>))
+                        return a_ * std::any_cast<Variable<T> >(operand1_).value() + b_;
+                    else
+                        return a_ * std::any_cast<Expression<T> >(operand1_).eval() + b_;
+                }
                 else if (op_.type() == typeid(UnaryOperator<T>))
                     return a_ * std::any_cast<UnaryOperator<T> >(op_).op()(std::any_cast<Expression>(operand1_).eval()) + b_;
                 else// if (op_.type() == typeid(BinaryOperator<T>))
@@ -271,7 +328,12 @@ namespace sr
                     jb_ = ceres::Jet<T, 4>{0};
 
                 if (op_.type() == typeid(int))
-                    return ja_ * std::any_cast<Variable<T> >(operand1_).value() + jb_;
+                {
+                    if (operand1_.type() == typeid(Variable<T>))
+                        return ja_ * std::any_cast<Variable<T> >(operand1_).value() + jb_;
+                    else
+                        return ja_ * std::any_cast<Expression<T> >(operand1_).evalJets() + jb_;
+                }
                 else if (op_.type() == typeid(UnaryOperator<T>))
                     return ja_ * std::any_cast<UnaryOperator<T> >(op_).jetOp()(std::any_cast<Expression>(operand1_).evalJets()) + jb_;
                 else// if (op_.type() == typeid(BinaryOperator<T>))
@@ -286,7 +348,12 @@ namespace sr
                     s = "a*(";
                 
                 if (op_.type() == typeid(int))
-                    s += std::any_cast<Variable<T> >(operand1_).name();
+                {
+                    if (operand1_.type() == typeid(Variable<T>))
+                        s += std::any_cast<Variable<T> >(operand1_).name();
+                    else
+                        s += std::any_cast<Expression<T> >(operand1_).str();
+                }
                 else if (op_.type() == typeid(UnaryOperator<T>))
                     s += std::any_cast<UnaryOperator<T> >(op_).name() + "(" + std::any_cast<Expression>(operand1_).str() + ")";
                 else// if (op_.type() == typeid(BinaryOperator<T>))
@@ -327,7 +394,12 @@ namespace sr
                         s += std::to_string(a_) + "*(";
 
                     if (op_.type() == typeid(int))
-                        s += std::any_cast<Variable<T> >(operand1_).name();
+                    {
+                        if (operand1_.type() == typeid(Variable<T>))
+                            s += std::any_cast<Variable<T> >(operand1_).name();
+                        else
+                            s += std::any_cast<Expression<T> >(operand1_).optStr();
+                    }
                     else if (op_.type() == typeid(UnaryOperator<T>))
                         s += std::any_cast<UnaryOperator<T> >(op_).name() + "(" + std::any_cast<Expression>(operand1_).optStr() + ")";
                     else// if (op_.type() == typeid(BinaryOperator<T>))
@@ -359,36 +431,6 @@ namespace sr
                     s = "0";
 
                 return s;
-            }
-
-            auto const& operand1() const
-            {
-                return operand1_;
-            }
-
-            auto& operand1()
-            {
-                return operand1_;
-            }
-
-            auto const& operand2() const
-            {
-                return operand2_;
-            }
-
-            auto& operand2()
-            {
-                return operand2_;
-            }
-
-            auto const& op() const
-            {
-                return op_;
-            }
-
-            auto& op()
-            {
-                return op_;
             }
 
             void params(std::vector<T>& params) const

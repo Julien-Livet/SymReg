@@ -14,8 +14,8 @@ namespace sr
         public:
             using Type = T;
 
-            Variable(std::string const& name, Eigen::Array<T, Eigen::Dynamic, 1> const& value) :
-                name_{name}, value_{value}
+            Variable(std::string const& name, Eigen::Array<T, Eigen::Dynamic, 1> const& value)
+                : name_{name}, value_{value}
             {
             }
 
