@@ -589,6 +589,19 @@ namespace sr
                 auto const possibilities{std::pow(paramValues.size(), params.size())};
                 auto const n{params.size()};
 
+                if (paramValues.size() && possibilities < exhaustiveLimit)
+                {
+                    params = optimizeParamsParallel(paramValues, params.size(), *this, y, epsLoss);
+
+                    applyParams(params);
+
+                    auto const x{eval()};
+                    auto const cost{(y - x).square().sum()};
+
+                    if (discreteParams)
+                        return cost;
+                }
+
                 std::vector<double*> param_ptrs(n);
                 for (size_t i = 0; i < n; ++i)
                     param_ptrs[i] = &params[i];
@@ -641,10 +654,15 @@ namespace sr
                         
                         ceres::Solver::Summary summary;
                         ceres::Solve(options, &problem, &summary);
-                        
-                        if (summary.final_cost < bestCost)
+
+                        auto loss{summary.final_cost};
+
+                        if (loss < 0)
+                            loss = std::numeric_limits<T>::infinity();
+
+                        if (loss < bestCost)
                         {
-                            bestCost = summary.final_cost;
+                            bestCost = loss;
                             bestParams = params;
                             
                             if (bestCost < epsLoss)
@@ -661,22 +679,14 @@ namespace sr
 
                     return cost;
                 }
-/*
-                if (paramValues.size() && possibilities < exhaustiveLimit)
-                {
-                    params = optimizeParamsParallel(paramValues, params.size(), *this, y, epsLoss);
 
-                    applyParams(params);
-
-                    auto const x{eval()};
-                    auto const cost{(y - x).square().sum()};
-
-                    if (discreteParams)
-                        return cost;
-                }
-*/
                 ceres::Solver::Summary summary;
                 ceres::Solve(options, &problem, &summary);
+
+                auto loss{summary.final_cost};
+
+                if (loss < 0)
+                    loss = std::numeric_limits<T>::infinity();
 
                 //applyParams(params);
 /*
@@ -720,7 +730,7 @@ namespace sr
                     return bestCost;
                 }
 */
-                return summary.final_cost;
+                return loss;
             }
 
             std::vector<std::string> const& opTree() const
@@ -784,7 +794,12 @@ namespace sr
                 auto const x{expression_.eval()};
 
                 for (int i{0}; i < x.size(); ++i)
+                {
+                    if (ceres::isnan(x[i]))
+                        return false;
+
                     residual[i] = S(y_[i]) - S(x[i]);
+                }
             }
             else
             {
@@ -799,7 +814,12 @@ namespace sr
                 auto const x{expression_.evalJets()};
 
                 for (int i{0}; i < x.size(); ++i)
+                {
+                    if (ceres::isnan(x[i]))
+                        return false;
+
                     residual[i] = S(y_[i]) - x[i];
+                }
             }
 
             return true;
@@ -811,7 +831,7 @@ namespace sr
     };
 
     template <typename T, typename S>
-    void generateAndEvaluate(
+    bool generateAndEvaluate(
         const std::vector<T>& values,
         size_t n,
         std::vector<T>& currentCombination,
@@ -819,7 +839,8 @@ namespace sr
         T& bestCost,
         std::vector<T>& bestParams,
         Expression<T> expression,
-        const S& y)
+        const S& y,
+        T epsLoss)
     {
         if (pos == n)
         {
@@ -833,14 +854,21 @@ namespace sr
                 bestParams = currentCombination;
             }
 
-            return;
+            if (cost < epsLoss)
+                return true;
+
+            return false;
         }
 
         for (const auto& val : values)
         {
             currentCombination[pos] = val;
-            generateAndEvaluate(values, n, currentCombination, pos + 1, bestCost, bestParams, expression, y);
+
+            if (generateAndEvaluate(values, n, currentCombination, pos + 1, bestCost, bestParams, expression, y, epsLoss))
+                return true;
         }
+
+        return false;
     }
 
     template <typename T, typename S>
@@ -848,7 +876,8 @@ namespace sr
         const std::vector<T>& paramValues,
         size_t n,
         Expression<T> const& expression,
-        const S& y)
+        const S& y,
+        T epsLoss)
     {
         T globalBestCost = std::numeric_limits<T>::infinity();
         std::vector<T> globalBestParams(n);
@@ -863,7 +892,9 @@ namespace sr
             for (size_t i = 0; i < paramValues.size(); ++i)
             {
                 currentCombination[0] = paramValues[i];
-                generateAndEvaluate(paramValues, n, currentCombination, 1, localBestCost, localBestParams, expression, y);
+
+                if (generateAndEvaluate(paramValues, n, currentCombination, 1, localBestCost, localBestParams, expression, y, epsLoss))
+                    i = paramValues.size();
             }
 
             #pragma omp critical

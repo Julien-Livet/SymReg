@@ -105,6 +105,11 @@ void callback(Expression<double> const& e, double const& loss)
     }
 }
 
+TEST(TestSymReg, InitTestCase)
+{
+    freopen("/tmp/stderr.txt", "w", stderr);
+}
+
 TEST(TestSymReg, 5x1Add7x2Addx3Add8)
 {
     //srand(0);
@@ -856,7 +861,7 @@ TEST(TestSymReg, Nguyen3)
     using UnOp = UnaryOperator<double>;
     using BinOp = BinaryOperator<double>;
 
-    std::vector<double> const paramsValue;//{0, 1};
+    std::vector<double> const paramsValue{0, 1};
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
                          std::vector<UnOp>{},
@@ -891,7 +896,7 @@ TEST(TestSymReg, Nguyen4)
     using UnOp = UnaryOperator<double>;
     using BinOp = BinaryOperator<double>;
 
-    std::vector<double> const paramsValue;//{0, 1};
+    std::vector<double> const paramsValue{0, 1};
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
                          std::vector<UnOp>{},
