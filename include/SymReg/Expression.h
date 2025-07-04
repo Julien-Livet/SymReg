@@ -233,6 +233,7 @@ namespace sr
                     if (*operand1Expression_ == *operand2Expression_)
                     {
                         operatorType_ = LinearOp;
+                        operand2Type_ = NoOperand;
                         operand2Expression_.reset();
                     }
                 }
