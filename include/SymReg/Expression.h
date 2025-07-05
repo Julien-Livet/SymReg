@@ -624,8 +624,8 @@ namespace sr
 
                 if (paramValues.size())
                 {
-                    size_t const count{1000};
-                    size_t const K{20};
+                    size_t const count{10000};
+                    size_t const K{1000};
                 
                     auto const v{discreteValues(count, params.size(), paramValues)};
                     arma::mat data(count, params.size());
@@ -645,11 +645,11 @@ namespace sr
                     std::vector<T> bestParams(params);
                     T bestCost{std::numeric_limits<T>::infinity()};
                     
-                    for (size_t i{0}; i < count; ++i)
+                    for (size_t i{0}; i < K; ++i)
                     {
                         for (size_t j{0}; j < params.size(); ++j)
-                            params[j] = data(i, j);
-                            
+                            params[j] = centroids(j, i);
+
                         applyParams(params);
                         
                         ceres::Solver::Summary summary;
@@ -846,7 +846,10 @@ namespace sr
         {
             expression.applyParams(currentCombination);
             auto const x{expression.eval()};
-            auto const cost{(y - x).square().sum()};
+            auto cost{(y - x).square().sum()};
+
+            if (std::isnan(cost))
+                cost = std::numeric_limits<T>::infinity();
 
             if (cost < bestCost)
             {
