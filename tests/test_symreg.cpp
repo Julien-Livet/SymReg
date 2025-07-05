@@ -790,7 +790,8 @@ TEST(TestSymReg, Nguyen1)
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
                          std::vector<UnOp>{},
-                         std::vector<BinOp>{BinOp::times()},
+                         std::vector<BinOp>{BinOp::times(),
+                                            BinOp::plus()},
                          4,
                          paramsValue};
 
@@ -825,7 +826,8 @@ TEST(TestSymReg, Nguyen2)
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
                          std::vector<UnOp>{},
-                         std::vector<BinOp>{BinOp::times()},
+                         std::vector<BinOp>{BinOp::times(),
+                                            BinOp::plus()},
                          4,
                          paramsValue};
 
@@ -856,11 +858,12 @@ TEST(TestSymReg, Nguyen3)
     using UnOp = UnaryOperator<double>;
     using BinOp = BinaryOperator<double>;
 
-    std::vector<double> const paramsValue{0, 1};
+    std::vector<double> const paramsValue;//{0, 1};
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
                          std::vector<UnOp>{},
-                         std::vector<BinOp>{BinOp::times()},
+                         std::vector<BinOp>{BinOp::times(),
+                                            BinOp::plus()},
                          4,
                          paramsValue};
 
@@ -891,11 +894,12 @@ TEST(TestSymReg, Nguyen4)
     using UnOp = UnaryOperator<double>;
     using BinOp = BinaryOperator<double>;
 
-    std::vector<double> const paramsValue{0, 1};
+    std::vector<double> const paramsValue;//{0, 1};
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", x)},
                          std::vector<UnOp>{},
-                         std::vector<BinOp>{BinOp::times()},
+                         std::vector<BinOp>{BinOp::times(),
+                                            BinOp::plus()},
                          4,
                          paramsValue};
 
@@ -1337,8 +1341,6 @@ TEST(TestSymReg, d_glider1)
     std::vector<double> const paramsValue{-1, 0, 1, -0.05};
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["sin"] = 1;
-    operatorDepth["+"] = 2;
-    operatorDepth["*"] = 2;
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
                          std::vector<UnOp>{UnOp::sin()},
@@ -1576,7 +1578,7 @@ TEST(TestSymReg, d_shearflow2)
     auto const cy{data.y.cos()};
     auto const sy{data.y.sin()};
 
-    std::vector<double> const paramsValue{0, 1, 0.1};
+    std::vector<double> const paramsValue;//{0, 1, 0.1};
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["+"] = 2;
     operatorDepth["*"] = 2;

@@ -25,7 +25,7 @@ FetchContent_MakeAvailable(googletest)
 
 find_package(Ceres REQUIRED)
 find_package(CURL REQUIRED)
-find_package(OpenMP REQUIRED)
+#find_package(OpenMP REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Widgets Charts)
 find_package(Armadillo REQUIRED)
 
@@ -36,15 +36,19 @@ add_compile_definitions(EIGEN_NO_DEBUG)
 set(CMAKE_AUTOMOC ON)
 
 add_executable(primes_demo src/primes_demo.cpp)
-target_link_libraries(primes_demo #asan ubsan
-  Ceres::ceres OpenMP::OpenMP_CXX Qt5::Widgets Qt5::Charts armadillo)
+target_link_libraries(primes_demo
+#  asan ubsan
+#  OpenMP::OpenMP_CXX
+  Ceres::ceres Qt5::Widgets Qt5::Charts armadillo)
 
 enable_testing()
 add_executable(test_symreg tests/test_symreg.cpp)
-target_link_libraries(test_symreg #asan ubsan
-  Ceres::ceres CURL::libcurl gtest gtest_main OpenMP::OpenMP_CXX armadillo)
+target_link_libraries(test_symreg
+#  asan ubsan
+#  OpenMP::OpenMP_CXX
+  Ceres::ceres CURL::libcurl gtest gtest_main armadillo)
 
-math(EXPR TIMEOUT "1 * 60 * 60")
+math(EXPR TIMEOUT "3 * 60 * 60")
 add_test(NAME TestSymReg COMMAND test_symreg)
 set_tests_properties(TestSymReg PROPERTIES TIMEOUT ${TIMEOUT})
 

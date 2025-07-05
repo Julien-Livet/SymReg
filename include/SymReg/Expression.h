@@ -706,7 +706,7 @@ namespace sr
                     auto x{eval()};
                     auto bestCost{(y - x).square().sum()};
 
-                    #pragma omp for nowait
+                    //#pragma omp for nowait
                     for (size_t i = 0; i < combinations.size(); ++i)
                     {
                         auto const& c{combinations[i]};
@@ -885,13 +885,13 @@ namespace sr
         T globalBestCost = std::numeric_limits<T>::infinity();
         std::vector<T> globalBestParams(n);
 
-        #pragma omp parallel
+        //#pragma omp parallel
         {
             T localBestCost = std::numeric_limits<T>::infinity();
             std::vector<T> localBestParams(n);
             std::vector<T> currentCombination(n);
 
-            #pragma omp for nowait
+            //#pragma omp for nowait
             for (size_t i = 0; i < paramValues.size(); ++i)
             {
                 currentCombination[0] = paramValues[i];
@@ -900,7 +900,7 @@ namespace sr
                     i = paramValues.size();
             }
 
-            #pragma omp critical
+            //#pragma omp critical
             {
                 if (localBestCost < globalBestCost)
                 {
