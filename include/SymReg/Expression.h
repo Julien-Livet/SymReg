@@ -13,6 +13,8 @@
 #define ARMA_DONT_PRINT_FAST_MATH_WARNING
 #include <mlpack/methods/kmeans/kmeans.hpp>
 
+#include <pybind11/embed.h>
+
 #include "SymReg/BinaryOperator.h"
 #include "SymReg/UnaryOperator.h"
 #include "SymReg/Variable.h"
@@ -22,6 +24,17 @@ namespace sr
     bool isSymbol(std::string const& s)
     {
         return s == "+" || s == "-" || s == "*" || s == "/";
+    }
+
+    template <typename T>
+    std::string to_string_c_locale(T value)
+    {
+        std::ostringstream oss;
+
+        oss.imbue(std::locale::classic());
+        oss << value;
+
+        return oss.str();
     }
 
     template <typename T>
@@ -454,7 +467,7 @@ namespace sr
                 if (std::abs(a_) > std::numeric_limits<T>::epsilon())
                 {
                     if (!aFixed)
-                        s += std::to_string(a_) + "*(";
+                        s += to_string_c_locale(a_) + "*(";
 
                     if (operatorType_ == LinearOp)
                     {
@@ -486,7 +499,7 @@ namespace sr
                         if (s.size())
                             s += "+";
 
-                        s += std::to_string(b_);
+                        s += to_string_c_locale(b_);
                     }
                 }
 
@@ -494,6 +507,28 @@ namespace sr
                     s = "0";
 
                 return s;
+            }
+
+            std::string sympyStr() const
+            {
+                namespace py = pybind11;
+
+                static py::scoped_interpreter guard{};
+
+                try
+                {
+                    py::module sympy = py::module::import("sympy");
+
+                    py::object expr = sympy.attr("sympify")(optStr());
+                    py::object simplified = sympy.attr("simplify")(expr);
+
+                    return py::str(simplified);
+                }
+                catch (py::error_already_set const& e)
+                {
+                }
+
+                return optStr();   
             }
 
             void params(std::vector<T>& params) const

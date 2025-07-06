@@ -1,3 +1,5 @@
+#include "SymReg/SymbolicRegressor.h"
+
 #include <QApplication>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
@@ -6,8 +8,6 @@
 #include <QTimer>
 
 using namespace QtCharts;
-
-#include "SymReg/SymbolicRegressor.h"
 
 using namespace sr;
 
@@ -90,12 +90,14 @@ class DynamicChart : public QObject
             {
                 bestLoss = loss;
 
-                std::cout << loss << " " << e.optStr() << std::endl;
+                auto const str{e.sympyStr()};
+
+                std::cout << loss << " " << str << std::endl;
 
                 auto const y{e.eval()};
 
                 QLineSeries *series = new QLineSeries();
-                series->setName(QString::fromStdString(e.optStr()));
+                series->setName(QString::fromStdString(str));
 
                 for (int i{0}; i < x.size(); ++i)
                     series->append(x[i], y[i]);

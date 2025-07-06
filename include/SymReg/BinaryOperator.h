@@ -49,20 +49,20 @@ namespace sr
                 return jetOp_;
             }
 
-            static BinaryOperator plus()
+            static BinaryOperator plus(Symmetry symmetry = StrictSymmetry)
             {
                 return BinaryOperator{"+",
                                       [] (auto const& x, auto const& y) {return x + y;},
                                       [] (auto const& x, auto const& y) {return x + y;},
-                                      StrictSymmetry};
+                                      symmetry};
             }
 
-            static BinaryOperator minus()
+            static BinaryOperator minus(Symmetry symmetry = StrictSymmetry)
             {
                 return BinaryOperator{"-",
                                       [] (auto const& x, auto const& y) {return x - y;},
                                       [] (auto const& x, auto const& y) {return x - y;},
-                                      StrictSymmetry};
+                                      symmetry};
             }
 
             static BinaryOperator times()
