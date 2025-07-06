@@ -17,7 +17,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install -y libcurl4-openssl-dev libboost-dev libomp-dev libqt5charts5-dev libmlpack-dev libensmallen-dev libarmadillo-dev libstb-dev
+        sudo apt install -y libcurl4-openssl-dev libboost-dev libomp-dev libqt5charts5-dev libmlpack-dev libensmallen-dev libarmadillo-dev libstb-dev pybind11-dev
         sudo apt install -y cmake libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev
         git clone --recursive https://ceres-solver.googlesource.com/ceres-solver
         cd ceres-solver
