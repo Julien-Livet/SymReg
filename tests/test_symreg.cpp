@@ -157,6 +157,7 @@ TEST(TestSymReg, 5x1Add7x2Addx3Add8)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -180,6 +181,7 @@ TEST(TestSymReg, LinearFit)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -214,6 +216,7 @@ TEST(TestSymReg, LogFit)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -247,6 +250,7 @@ TEST(TestSymReg, Test1)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -287,6 +291,7 @@ TEST(TestSymReg, Test2)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -332,6 +337,7 @@ TEST(TestSymReg, Test3)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -366,6 +372,7 @@ TEST(TestSymReg, Test4)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -401,6 +408,7 @@ TEST(TestSymReg, Test5)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -435,6 +443,7 @@ TEST(TestSymReg, Test6)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -486,6 +495,7 @@ TEST(TestSymReg, PySR)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -525,6 +535,7 @@ TEST(TestSymReg, GPLearn)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -575,6 +586,7 @@ TEST(TestSymReg, Line)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -623,6 +635,7 @@ TEST(TestSymReg, Circle)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -681,6 +694,7 @@ TEST(TestSymReg, Plane)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -732,6 +746,7 @@ TEST(TestSymReg, Sphere)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -764,6 +779,7 @@ TEST(TestSymReg, x1Mulx2)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -800,6 +816,7 @@ TEST(TestSymReg, Nguyen1)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -836,6 +853,7 @@ TEST(TestSymReg, Nguyen2)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -872,6 +890,7 @@ TEST(TestSymReg, Nguyen3)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -908,6 +927,7 @@ TEST(TestSymReg, Nguyen4)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -956,6 +976,7 @@ TEST(TestSymReg, Nguyen5)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1001,6 +1022,7 @@ TEST(TestSymReg, Nguyen6)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1047,6 +1069,7 @@ TEST(TestSymReg, Nguyen7)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1083,6 +1106,7 @@ TEST(TestSymReg, Nguyen8)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1131,6 +1155,7 @@ TEST(TestSymReg, Nguyen9)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1172,6 +1197,7 @@ TEST(TestSymReg, Nguyen10)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1211,6 +1237,7 @@ TEST(TestSymReg, Keijzer10)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1240,6 +1267,7 @@ TEST(TestSymReg, d_bacres1)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1269,6 +1297,7 @@ TEST(TestSymReg, d_bacres2)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1298,6 +1327,7 @@ TEST(TestSymReg, d_barmag1)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1326,6 +1356,7 @@ TEST(TestSymReg, d_barmag2)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1354,6 +1385,7 @@ TEST(TestSymReg, d_glider1)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1399,6 +1431,7 @@ TEST(TestSymReg, d_glider2)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1428,6 +1461,7 @@ TEST(TestSymReg, d_lv1)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1457,6 +1491,7 @@ TEST(TestSymReg, d_lv2)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1487,6 +1522,7 @@ TEST(TestSymReg, d_predprey1)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1517,6 +1553,7 @@ TEST(TestSymReg, d_predprey2)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1547,6 +1584,7 @@ TEST(TestSymReg, d_shearflow1)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1595,6 +1633,7 @@ TEST(TestSymReg, d_shearflow2)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1624,6 +1663,7 @@ TEST(TestSymReg, d_vdp1)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1653,6 +1693,7 @@ TEST(TestSymReg, d_vdp2)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
+    std::cout << p.second.sympyStr() << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
