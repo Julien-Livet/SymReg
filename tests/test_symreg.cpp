@@ -955,7 +955,7 @@ TEST(TestSymReg, Nguyen5)
     operatorDepth["sin"] = 1;
     operatorDepth["cos"] = 1;
     std::vector<Expression<double> > extraExpressions;
-    extraExpressions.emplace_back(Expression<double>(BinOp::times(), Var("x", x), Var("x", x)));
+    //extraExpressions.emplace_back(Expression<double>(BinOp::times(), Var("x", x), Var("x", x)));
     //extraExpressions.emplace_back(Expression<double>(BinOp::times(),
     //                                                 Expression<double>(UnOp::cos(), Var("x", x)),
     //                                                 Expression<double>(UnOp::sin(), Expression<double>(BinOp::times(),
@@ -1135,7 +1135,7 @@ TEST(TestSymReg, Nguyen9)
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["sin"] = 1;
     std::vector<Expression<double> > extraExpressions;
-    extraExpressions.emplace_back(Expression<double>(BinOp::times(), Var("x2", x2), Var("x2", x2)));
+    //extraExpressions.emplace_back(Expression<double>(BinOp::times(), Var("x2", x2), Var("x2", x2)));
     //extraExpressions.emplace_back(Expression<double>(BinOp::plus(),
     //                                                 Expression<double>(UnOp::sin(), Var("x1", x1)),
     //                                                 Expression<double>(UnOp::sin(), Expression<double>(BinOp::times(),
@@ -1397,7 +1397,7 @@ TEST(TestSymReg, d_glider2)
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
     using BinOp = BinaryOperator<double>;
-/*
+
     std::vector<double> const paramsValue;//{-1, 0, 1};
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["cos"] = 1;
@@ -1410,7 +1410,7 @@ TEST(TestSymReg, d_glider2)
                          3,
                          paramsValue,
                          operatorDepth};
-*/
+/*
     auto const cy{data.y.cos()};
     auto const sy{data.y.sin()};
 
@@ -1425,7 +1425,7 @@ TEST(TestSymReg, d_glider2)
                          3,
                          paramsValue,
                          operatorDepth};
-
+*/
     auto const p{sr.fit(data.label)};
 
     std::cout << p.first << std::endl;

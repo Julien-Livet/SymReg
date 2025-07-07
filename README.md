@@ -18,12 +18,13 @@ It is possible to call user callback during process with ```callback```.
 ## Installation
 
 ```
+sudo apt update
+sudo apt install -y libcurl4-openssl-dev libboost-dev libomp-dev libqt5charts5-dev libmlpack-dev libensmallen-dev libarmadillo-dev libstb-dev pybind11-dev
+sudo apt install -y cmake libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev
 cd ~
 mkdir symreg_ws
 cd symreg_ws
-git clone git@github.com:Julien-Livet/SymReg.git
-sudo apt install -y libcurl4-openssl-dev libboost-dev libomp-dev libqt5charts5-dev libmlpack-dev libensmallen-dev libarmadillo-dev libstb-dev pybind11-dev
-sudo apt install -y cmake libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev
+git clone https://github.com/Julien-Livet/SymReg.git
 git clone --recursive https://ceres-solver.googlesource.com/ceres-solver
 cd ceres-solver
 mkdir build && cd build
@@ -35,5 +36,5 @@ mkdir build && cd build
 cmake ..
 make -j$(nproc)
 ./primes_demo
-ctest -j$(nproc) --output-on-failure
+ctest -V
 ```
