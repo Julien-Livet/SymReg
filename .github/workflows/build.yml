@@ -33,4 +33,4 @@ jobs:
       run: cmake --build build
 
     - name: Run tests
-      run: ctest -j$(nproc) --test-dir build --output-on-failure
+      run: ctest --test-dir build --output-on-failure
