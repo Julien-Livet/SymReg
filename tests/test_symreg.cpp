@@ -1252,8 +1252,6 @@ TEST(TestSymReg, d_bacres1)
 
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["/"] = 1;
-    operatorDepth["*"] = 2;
-    operatorDepth["+"] = 2;
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
                          std::vector<UnOp>{},
@@ -1402,7 +1400,7 @@ TEST(TestSymReg, d_glider2)
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["cos"] = 1;
     operatorDepth["/"] = 1;
-    operatorDepth["+"] = 2;
+    operatorDepth["+"] = 1;
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
                          std::vector<UnOp>{UnOp::cos()},
