@@ -718,10 +718,10 @@ namespace sr
                 ceres::Solver::Summary summary;
                 ceres::Solve(options, &problem, &summary);
 
+                applyParams(params);
+
                 auto const x{eval()};
                 auto const loss{(y - x).square().sum()};
-
-                //applyParams(params);
 /*
                 if (!discreteParams && loss < epsLoss)
                     return loss;
