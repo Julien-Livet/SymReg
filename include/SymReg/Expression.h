@@ -718,15 +718,13 @@ namespace sr
                 ceres::Solver::Summary summary;
                 ceres::Solve(options, &problem, &summary);
 
-                auto loss{summary.final_cost};
-
-                if (loss < 0)
-                    loss = std::numeric_limits<T>::infinity();
+                auto const x{eval()};
+                auto const loss{(y - x).square().sum()};
 
                 //applyParams(params);
 /*
-                if (!discreteParams && summary.final_cost < epsLoss)
-                    return summary.final_cost;
+                if (!discreteParams && loss < epsLoss)
+                    return loss;
 
                 if (discreteParams || possibilities >= exhaustiveLimit)
                 {
