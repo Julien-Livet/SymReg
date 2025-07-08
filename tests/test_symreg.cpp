@@ -1261,15 +1261,15 @@ TEST(TestSymReg, d_bacres1)
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["/"] = 1;
     std::vector<Expression<double> > extraExpressions;
-    //extraExpressions.emplace_back(Expression<double>{BinOp::plus(),
-    //                                                 Var("x", data.x),
-    //                                                 Expression<double>{BinOp::divide(),
-    //                                                                    Expression<double>{BinOp::times(),
-    //                                                                                       Var("x", data.x),
-    //                                                                                       Var("y", data.y)},
-    //                                                                    Expression<double>{BinOp::times(),
-    //                                                                                       Var("x", data.x),
-    //                                                                                       Var("x", data.x)}}});
+    extraExpressions.emplace_back(Expression<double>{BinOp::plus(),
+                                                     Var("x", data.x),
+                                                     Expression<double>{BinOp::divide(),
+                                                                        Expression<double>{BinOp::times(),
+                                                                                           Var("x", data.x),
+                                                                                           Var("y", data.y)},
+                                                                        Expression<double>{BinOp::times(),
+                                                                                           Var("x", data.x),
+                                                                                           Var("x", data.x)}}});
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
                          std::vector<UnOp>{},

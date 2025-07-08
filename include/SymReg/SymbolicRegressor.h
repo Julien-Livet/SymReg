@@ -69,7 +69,8 @@ namespace sr
                     std::vector<T> params;
                     e.params(params);
 
-                    if (e.sympyStr() == "0.0" || e.sympyStr() == "0")
+                    if (boost::math::tools::l2_norm(y) < eps
+                        && (e.sympyStr() == "0.0" || e.sympyStr() == "0"))
                         cost = std::numeric_limits<T>::infinity();
 
                     expressions.emplace_back(e);
@@ -89,7 +90,8 @@ namespace sr
                     std::vector<T> params;
                     e.params(params);
 
-                    if (e.sympyStr() == "0.0" || e.sympyStr() == "0")
+                    if (boost::math::tools::l2_norm(y) < eps
+                        && (e.sympyStr() == "0.0" || e.sympyStr() == "0"))
                         cost = std::numeric_limits<T>::infinity();
 
                     expressions.emplace_back(e);
@@ -159,7 +161,8 @@ namespace sr
                                         std::vector<T> params;
                                         e.params(params);
 
-                                        if (e.sympyStr() == "0.0" || e.sympyStr() == "0")
+                                        if (boost::math::tools::l2_norm(y) < eps
+                                            && (e.sympyStr() == "0.0" || e.sympyStr() == "0"))
                                             cost = std::numeric_limits<T>::infinity();
 
                                         localExpressions.emplace_back(e);
@@ -249,7 +252,8 @@ namespace sr
                                             std::vector<T> params;
                                             e.params(params);
 
-                                            if (e.sympyStr() == "0.0" || e.sympyStr() == "0")
+                                            if (boost::math::tools::l2_norm(y) < eps
+                                                && (e.sympyStr() == "0.0" || e.sympyStr() == "0"))
                                                 cost = std::numeric_limits<T>::infinity();
 
                                             localExpressions.emplace_back(e);
