@@ -678,6 +678,7 @@ namespace sr
                         for (size_t i{0}; i < c.size(); ++i)
                         {
                             Eigen::Array<T, Eigen::Dynamic, 1> direction(c.size());
+                            direction *= 0;
                             auto const j{static_cast<size_t>(std::distance(paramValues.begin(), std::find(paramValues.begin(), paramValues.end(), c[i])))};
                             direction[i] = paramValues[(j - 1) % paramValues.size()] - c[i];
                             directions.emplace_back(direction);
@@ -704,6 +705,10 @@ namespace sr
                     auto bestCost{cells.front().cost};
                     auto bestParams{cells.front().param};
 
+                    auto const n{std::pow(paramValues.size(), params.size())};
+                    //auto const limit{0.75 * n};
+                    auto const limit{std::exp((exhaustiveLimit - n) / n) * n};
+
                     while (cells.size())
                     {
                         auto const cell{cells.front()};
@@ -715,7 +720,7 @@ namespace sr
                         else
                             continue;
 
-                        if (visitedCells.size() > 0.75 * std::pow(paramValues.size(), params.size()))
+                        if (visitedCells.size() > limit)
                             break;
 
                         for (auto const& direction: cell.directions)
@@ -727,6 +732,7 @@ namespace sr
                             for (size_t i{0}; i < c.size(); ++i)
                             {
                                 Eigen::Array<T, Eigen::Dynamic, 1> direction(c.size());
+                                direction *= 0;
                                 auto const j{static_cast<size_t>(std::distance(paramValues.begin(), std::find(paramValues.begin(), paramValues.end(), c[i])))};
                                 direction[i] = paramValues[(j - 1) % paramValues.size()] - c[i];
                                 d.emplace_back(direction);
@@ -753,10 +759,10 @@ namespace sr
                                 if (cost < epsLoss)
                                     return cost;
                             }
-                    
+
                             cells.emplace_back(cost, c, d);
                         }
-                        
+
                         std::sort(cells.begin(), cells.end(), [] (auto const& x, auto const& y) {return x.cost < y.cost;});
                         cells.resize(50);
                     }
@@ -800,7 +806,7 @@ namespace sr
 
                 applyParams(params);
 
-                if (paramValues.size() && discreteParams)
+                if (discreteParams)
                 {
                     auto const roundedParams{roundParams(params, paramValues)};
                     

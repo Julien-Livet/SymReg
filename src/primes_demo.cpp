@@ -24,16 +24,14 @@ class FitWorker : public QObject
         void run()
         {
             auto const result = sr->fit(y);
-            emit finished(result.first, result.second);
+            
+            std::cout << "Optimization end" << std::endl;
         }
 
         void setTargetY(Eigen::ArrayXd const& y_)
         {
             y = y_;
         }
-
-    signals:
-        void finished(double loss, Expression<double> const& expr);
 
     private:
         SymbolicRegressor<double>* sr;
@@ -131,7 +129,7 @@ class DynamicChart : public QObject
 
             for (auto const& a: chart->axes())
             {
-                if (auto *axis = qobject_cast<QValueAxis*>(a))
+                if (auto* axis = qobject_cast<QValueAxis*>(a))
                 {
                     axis->setGridLineVisible(true);
                     axis->setMinorTickCount(4);
@@ -144,7 +142,7 @@ class DynamicChart : public QObject
             using UnOp = UnaryOperator<double>;
             using BinOp = BinaryOperator<double>;
 
-            std::vector<double> const paramsValue{-1, 0, 1};
+            std::vector<double> const paramsValue{-1, 0, 1, 2};
 
             std::map<std::string, size_t> operatorDepth;
             operatorDepth["log"] = 2;
@@ -170,15 +168,6 @@ class DynamicChart : public QObject
             worker->moveToThread(thread);
 
             connect(thread, &QThread::started, worker, &FitWorker::run);
-            connect(worker, &FitWorker::finished, this,
-                    [this] (double loss, Expression<double> const& expr)
-                    {
-                        std::cout << "Optimization end" << std::endl;
-                        callback(expr, loss);
-                        thread->quit();
-                        worker->deleteLater();
-                        thread->deleteLater();
-                    });
 
             thread->start();
     }
@@ -196,8 +185,6 @@ class DynamicChart : public QObject
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
-
-    freopen("/tmp/stderr.txt", "w", stderr);
 
     QChart* chart = new QChart();
     chart->createDefaultAxes();

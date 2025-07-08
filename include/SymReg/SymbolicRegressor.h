@@ -38,7 +38,7 @@ namespace sr
                   verbose_{verbose}, callback_(callback), discreteParams_{discreteParams}
             {
                 if (!verbose)
-                    freopen("/tmp/stderr.txt", "w", stderr);
+                    auto const f{freopen("/tmp/stderr.txt", "w", stderr)};
             }
 
             std::vector<Variable<T> > const& variables() const
