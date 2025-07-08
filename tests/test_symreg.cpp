@@ -600,6 +600,8 @@ TEST(TestSymReg, Line)
 
 TEST(TestSymReg, Circle)
 {
+    //TODO: this test need some work
+
     //srand(0);
     srand(time(0));
 
@@ -708,6 +710,8 @@ TEST(TestSymReg, Plane)
 
 TEST(TestSymReg, Sphere)
 {
+    //TODO: this test need some work
+
     //srand(0);
     srand(time(0));
 
@@ -1260,13 +1264,24 @@ TEST(TestSymReg, d_bacres1)
     std::vector<double> const paramValues{-1, 0, 0.5, 1, 20};
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["/"] = 1;
+    std::vector<Expression<double> > extraExpressions;
+    //extraExpressions.emplace_back(Expression<double>{BinOp::plus(),
+    //                                                 Var("x", data.x),
+    //                                                 Expression<double>{BinOp::divide(),
+    //                                                                    Expression<double>{BinOp::times(),
+    //                                                                                       Var("x", data.x),
+    //                                                                                       Var("y", data.y)},
+    //                                                                    Expression<double>{BinOp::times(),
+    //                                                                                       Var("x", data.x),
+    //                                                                                       Var("x", data.x)}}});
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
                          std::vector<UnOp>{},
                          std::vector<BinOp>{BinOp::times(), BinOp::plus(), BinOp::divide()},
                          3,
                          paramValues,
-                         operatorDepth};
+                         operatorDepth,
+                         extraExpressions};
 
     auto const p{sr.fit(data.label)};
 

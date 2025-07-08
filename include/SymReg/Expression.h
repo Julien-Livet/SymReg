@@ -535,7 +535,7 @@ namespace sr
                 return s;
             }
 
-            std::string sympyStr() const
+            std::string sympyStr(T eps = 1e-4) const
             {
                 namespace py = pybind11;
 
@@ -547,11 +547,23 @@ namespace sr
 
                     py::object expr = sympy.attr("sympify")(optStr());
                     py::object simplified = sympy.attr("simplify")(expr);
+                    py::object expanded = sympy.attr("expand")(expr);
 
+                    py::exec("from sympy import Float, Rational", py::globals());
+
+                    std::string const eps_s{to_string_c_locale(eps)};
+                    std::string s{"(lambda e: e.replace(lambda x: isinstance(x, (Float, Rational)), lambda x: Float(round(float(x)/" + eps_s + ") * " + eps_s + ")))"};
+
+                    py::object round_expr = py::eval(s);
+
+                    py::object expr_rounded = round_expr(expanded);
+                    simplified = sympy.attr("simplify")(expr_rounded);
+                    
                     return py::str(simplified);
                 }
                 catch (py::error_already_set const& e)
                 {
+                    std::cout << e.what() << std::endl;
                 }
 
                 return optStr();   
@@ -710,7 +722,8 @@ namespace sr
 
                     auto const n{std::pow(paramValues.size(), params.size())};
                     //auto const limit{0.75 * n};
-                    auto const limit{std::exp((exhaustiveLimit - n) / n) * n};
+                    //auto const limit{std::exp((exhaustiveLimit - n) / n) * n};
+                    auto const limit{exhaustiveLimit};
 
                     while (cells.size())
                     {
@@ -865,6 +878,28 @@ namespace sr
             std::vector<std::string> const& opTree() const
             {
                 return opTree_;
+            }
+        
+            bool isNull(T eps = 1e-4) const
+            {
+                if (operatorType_ == LinearOp)
+                {
+                    if (operand1Type_ == VariableOperand)
+                        return std::abs(a) < eps && std::abs(b) < eps;
+                    else
+                        return operand1Expression_->isNull() && (std::abs(b) < eps || bFixed);
+                }
+                else if (operatorType_ == UnaryOp)
+                    return (std::abs(a) < eps || operand1Expression_->isNull()) && (std::abs(b) < eps || bFixed);
+                else// if (operatorType_ == BinaryOp)
+                {
+                    if (binaryOperator_->name() == "+" || binaryOperator_->name() == "-")
+                        return (std::abs(a) < eps || (operand1Expression_->isNull() && operand2Expression_->isNull())) && (std::abs(b) < eps || bFixed);
+                    else if (binaryOperator_->name() == "*")
+                        return (std::abs(a) < eps || (operand1Expression_->isNull() || operand2Expression_->isNull())) && (std::abs(b) < eps || bFixed);
+                    else
+                        return false;
+                }
             }
 
         private:

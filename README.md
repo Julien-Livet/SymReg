@@ -13,6 +13,7 @@ We can define the depth of operators with ```operatorDepth```.
 At each combination, we compute an optimal expression. If ```paramValues``` is empty, we search optimal parameters with ```ceres```, else we use brute force algorithm if possible.
 If ```discreteParams``` is ```true```, parameters will be rounded to admissible values after ceres optimization.
 We process like that until the computed loss is less than ```epsLoss```.
+```eps``` is used to round numeric values and compare with other expressions for example.
 It is possible to call user callback during process with ```callback```.
 
 ## Installation

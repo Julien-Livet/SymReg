@@ -18,7 +18,7 @@ namespace sr
     class SymbolicRegressor
     {
         public:
-            T eps = 1e-6;
+            T eps = 1e-4;
             T epsLoss = 1e-12;
             size_t exhaustiveLimit = 1e5;
 
@@ -69,7 +69,7 @@ namespace sr
                     std::vector<T> params;
                     e.params(params);
 
-                    if (boost::math::tools::l2_norm(params) < eps)
+                    if (e.sympyStr() == "0.0" || e.sympyStr() == "0")
                         cost = std::numeric_limits<T>::infinity();
 
                     expressions.emplace_back(e);
@@ -89,7 +89,7 @@ namespace sr
                     std::vector<T> params;
                     e.params(params);
 
-                    if (boost::math::tools::l2_norm(params) < eps)
+                    if (e.sympyStr() == "0.0" || e.sympyStr() == "0")
                         cost = std::numeric_limits<T>::infinity();
 
                     expressions.emplace_back(e);
@@ -159,7 +159,7 @@ namespace sr
                                         std::vector<T> params;
                                         e.params(params);
 
-                                        if (boost::math::tools::l2_norm(params) < eps)
+                                        if (e.sympyStr() == "0.0" || e.sympyStr() == "0")
                                             cost = std::numeric_limits<T>::infinity();
 
                                         localExpressions.emplace_back(e);
@@ -249,7 +249,7 @@ namespace sr
                                             std::vector<T> params;
                                             e.params(params);
 
-                                            if (boost::math::tools::l2_norm(params) < eps)
+                                            if (e.sympyStr() == "0.0" || e.sympyStr() == "0")
                                                 cost = std::numeric_limits<T>::infinity();
 
                                             localExpressions.emplace_back(e);
