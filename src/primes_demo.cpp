@@ -161,7 +161,7 @@ class DynamicChart : public QObject
                                                                  {
                                                                      QMetaObject::invokeMethod(this, [this, e, loss] () { this->callback(e, loss); }, Qt::QueuedConnection);
                                                                  },
-                                                                 false/*true*/);
+                                                                 true/*false*/);
 
             worker = new FitWorker(srPtr.get());
             worker->setTargetY(y);

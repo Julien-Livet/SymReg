@@ -5,6 +5,7 @@
 #include <any>
 #include <deque>
 #include <random>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -25,6 +26,31 @@ namespace sr
     {
         return s == "+" || s == "-" || s == "*" || s == "/";
     }
+
+    template<typename T>
+    struct EigenArrayLess
+    {
+        bool operator()(Eigen::Array<T, Eigen::Dynamic, 1> const& a,
+                        Eigen::Array<T, Eigen::Dynamic, 1> const& b) const
+        {
+            const auto size_a = a.size();
+            const auto size_b = b.size();
+            
+            if (size_a != size_b)
+                return size_a < size_b;
+
+            for (int i = 0; i < size_a; ++i)
+            {
+                if (a[i] < b[i])
+                    return true;
+
+                if (a[i] > b[i])
+                    return false;
+            }
+
+            return false;
+        }
+    };
 
     template <typename T>
     std::string to_string_c_locale(T value)
@@ -624,17 +650,129 @@ namespace sr
                 auto const possibilities{std::pow(paramValues.size(), params.size())};
                 auto const n{params.size()};
 
-                if (paramValues.size() && possibilities < exhaustiveLimit)
+                if (paramValues.size())
                 {
-                    params = optimizeParamsParallel(paramValues, params.size(), *this, y, epsLoss);
+                    std::set<Eigen::Array<T, Eigen::Dynamic, 1>, EigenArrayLess<T> > initialCells;
 
-                    applyParams(params);
+                    Eigen::Array<T, Eigen::Dynamic, 1> barycenter(params.size());
 
-                    auto const x{eval()};
-                    auto const cost{(y - x).square().sum()};
+                    for (size_t i{0}; i < params.size(); ++i)
+                        barycenter[i] = paramValues[paramValues.size() / 2];
+
+                    initialCells.emplace(barycenter);
+
+                    struct Cell
+                    {
+                        T cost;
+                        Eigen::Array<T, Eigen::Dynamic, 1> param;
+                        std::vector<Eigen::Array<T, Eigen::Dynamic, 1> > directions;
+                    };
+
+                    std::set<Eigen::Array<T, Eigen::Dynamic, 1>, EigenArrayLess<T> > visitedCells;
+                    std::vector<Cell> cells;
+
+                    for (auto const& c: initialCells)
+                    {
+                        std::vector<Eigen::Array<T, Eigen::Dynamic, 1> > directions;
+                                        
+                        for (size_t i{0}; i < c.size(); ++i)
+                        {
+                            Eigen::Array<T, Eigen::Dynamic, 1> direction(c.size());
+                            auto const j{static_cast<size_t>(std::distance(paramValues.begin(), std::find(paramValues.begin(), paramValues.end(), c[i])))};
+                            direction[i] = paramValues[(j - 1) % paramValues.size()] - c[i];
+                            directions.emplace_back(direction);
+                            direction[i] = paramValues[(j + 1) % paramValues.size()] - c[i];
+                            directions.emplace_back(direction);
+                        }
+
+                        std::vector<T> p;
+                        p.reserve(c.size());
+
+                        for (auto const& v: c)
+                            p.emplace_back(v);
+
+                        applyParams(p);
+
+                        auto const x{eval()};
+                        auto const cost{(y - x).square().sum()};
+
+                        cells.emplace_back(cost, c, directions);
+                    }
+
+                    std::sort(cells.begin(), cells.end(), [] (auto const& x, auto const& y) {return x.cost < y.cost;});
+
+                    auto bestCost{cells.front().cost};
+                    auto bestParams{cells.front().param};
+
+                    while (cells.size())
+                    {
+                        auto const cell{cells.front()};
+                        cells.front() = cells.back();
+                        cells.pop_back();
+
+                        if (visitedCells.find(cell.param) == visitedCells.end())
+                            visitedCells.emplace(cell.param);
+                        else
+                            continue;
+
+                        if (visitedCells.size() > 0.75 * std::pow(paramValues.size(), params.size()))
+                            break;
+
+                        for (auto const& direction: cell.directions)
+                        {
+                            Eigen::Array<T, Eigen::Dynamic, 1> const c{cell.param + direction};
+
+                            std::vector<Eigen::Array<T, Eigen::Dynamic, 1> > d;
+
+                            for (size_t i{0}; i < c.size(); ++i)
+                            {
+                                Eigen::Array<T, Eigen::Dynamic, 1> direction(c.size());
+                                auto const j{static_cast<size_t>(std::distance(paramValues.begin(), std::find(paramValues.begin(), paramValues.end(), c[i])))};
+                                direction[i] = paramValues[(j - 1) % paramValues.size()] - c[i];
+                                d.emplace_back(direction);
+                                direction[i] = paramValues[(j + 1) % paramValues.size()] - c[i];
+                                d.emplace_back(direction);
+                            }
+
+                            std::vector<T> p;
+                            p.reserve(c.size());
+
+                            for (auto const& v: c)
+                                p.emplace_back(v);
+
+                            applyParams(p);
+
+                            auto const x{eval()};
+                            auto const cost{(y - x).square().sum()};
+
+                            if (cost < bestCost)
+                            {
+                                bestCost = cost;
+                                bestParams = c;
+
+                                if (cost < epsLoss)
+                                    return cost;
+                            }
+                    
+                            cells.emplace_back(cost, c, d);
+                        }
+                        
+                        std::sort(cells.begin(), cells.end(), [] (auto const& x, auto const& y) {return x.cost < y.cost;});
+                        cells.resize(50);
+                    }
 
                     if (discreteParams)
-                        return cost;
+                    {
+                        std::vector<T> p;
+                        p.reserve(bestParams.size());
+
+                        for (auto const& v: bestParams)
+                            p.emplace_back(v);
+
+                        applyParams(p);
+
+                        return bestCost;
+                    }
                 }
 
                 std::vector<double*> param_ptrs(n);
@@ -657,68 +795,17 @@ namespace sr
                 options.minimizer_progress_to_stdout = verbose;
                 options.logging_type = ceres::SILENT;
 
-                if (paramValues.size())
-                {
-                    size_t const count{10000};
-                    size_t const K{1000};
-                
-                    auto const v{discreteValues(count, params.size(), paramValues)};
-                    arma::mat data(count, params.size());
-
-                    for (size_t i{0}; i < count; ++i)
-                    {
-                        for (size_t j{0}; j < params.size(); ++j)
-                            data(i, j) = v[i][j];
-                    }
-
-                    arma::Row<size_t> assignments;
-                    arma::mat centroids;
-
-                    mlpack::KMeans<> kmeans;
-                    kmeans.Cluster(data, K, assignments, centroids);
-                    
-                    std::vector<T> bestParams(params);
-                    T bestCost{std::numeric_limits<T>::infinity()};
-                    
-                    for (size_t i{0}; i < K; ++i)
-                    {
-                        for (size_t j{0}; j < params.size(); ++j)
-                            params[j] = centroids(j, i);
-
-                        applyParams(params);
-                        
-                        ceres::Solver::Summary summary;
-                        ceres::Solve(options, &problem, &summary);
-
-                        auto loss{summary.final_cost};
-
-                        if (loss < 0)
-                            loss = std::numeric_limits<T>::infinity();
-
-                        if (loss < bestCost)
-                        {
-                            bestCost = loss;
-                            bestParams = params;
-                            
-                            if (bestCost < epsLoss)
-                                break;
-                        }
-                    }
-
-                    auto const roundedParams{roundParams(bestParams, paramValues)};
-
-                    applyParams(roundedParams);
-
-                    auto const x{eval()};
-                    auto const cost{(y - x).square().sum()};
-
-                    return cost;
-                }
-
                 ceres::Solver::Summary summary;
                 ceres::Solve(options, &problem, &summary);
 
                 applyParams(params);
+
+                if (paramValues.size() && discreteParams)
+                {
+                    auto const roundedParams{roundParams(params, paramValues)};
+                    
+                    applyParams(roundedParams);
+                }
 
                 auto const x{eval()};
                 auto const loss{(y - x).square().sum()};

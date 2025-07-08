@@ -272,7 +272,14 @@ TEST(TestSymReg, Test2)
     using UnOp = UnaryOperator<double>;
     using BinOp = BinaryOperator<double>;
 
-    std::vector<double> const paramsValue{0, 1};
+    int constexpr min{-2 + 0};
+    int constexpr max{2 - 1 + 1};
+    auto const ls{Eigen::ArrayXd::LinSpaced(max - min + 1, min, max)};
+    std::vector<double> paramsValue;
+    for (int i{0}; i < ls.size(); ++i)
+        paramsValue.emplace_back(ls[i]);
+    //paramsValue = std::vector<double>{0, 1};
+
     std::vector<Expression<double> > extraExpressions;
     //extraExpressions.emplace_back(Expression<double>(BinOp::times(),
     //                                                 Expression<double>(UnOp::sin(), Var("x", x)),
@@ -1250,6 +1257,7 @@ TEST(TestSymReg, d_bacres1)
     using UnOp = UnaryOperator<double>;
     using BinOp = BinaryOperator<double>;
 
+    std::vector<double> const paramValues{-1, 0, 0.5, 1, 20};
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["/"] = 1;
 
@@ -1257,7 +1265,7 @@ TEST(TestSymReg, d_bacres1)
                          std::vector<UnOp>{},
                          std::vector<BinOp>{BinOp::times(), BinOp::plus(), BinOp::divide()},
                          3,
-                         std::vector<double>{},
+                         paramValues,
                          operatorDepth};
 
     auto const p{sr.fit(data.label)};
