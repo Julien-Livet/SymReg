@@ -705,6 +705,9 @@ namespace sr
                     auto bestCost{cells.front().cost};
                     auto bestParams{cells.front().param};
 
+                    if (std::isnan(bestCost))
+                        bestCost = std::numeric_limits<T>::infinity();
+
                     auto const n{std::pow(paramValues.size(), params.size())};
                     //auto const limit{0.75 * n};
                     auto const limit{std::exp((exhaustiveLimit - n) / n) * n};

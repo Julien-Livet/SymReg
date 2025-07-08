@@ -142,7 +142,7 @@ class DynamicChart : public QObject
             using UnOp = UnaryOperator<double>;
             using BinOp = BinaryOperator<double>;
 
-            std::vector<double> const paramsValue{-1, 0, 1, 2};
+            std::vector<double> const paramsValue{-1, 0, 1};
 
             std::map<std::string, size_t> operatorDepth;
             operatorDepth["log"] = 2;
