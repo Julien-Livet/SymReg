@@ -600,8 +600,6 @@ TEST(TestSymReg, Line)
 
 TEST(TestSymReg, Circle)
 {
-    //TODO: this test need some work
-
     //srand(0);
     srand(time(0));
 
@@ -710,8 +708,6 @@ TEST(TestSymReg, Plane)
 
 TEST(TestSymReg, Sphere)
 {
-    //TODO: this test need some work
-
     //srand(0);
     srand(time(0));
 
