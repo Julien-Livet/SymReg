@@ -1257,7 +1257,7 @@ TEST(TestSymReg, d_bacres1)
     using UnOp = UnaryOperator<double>;
     using BinOp = BinaryOperator<double>;
 
-    std::vector<double> const paramValues{-1, 0, 0.5, 1, 20};
+    std::vector<double> const paramValues;//{-1, 0, 0.5, 1, 20};
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["/"] = 1;
     std::vector<Expression<double> > extraExpressions;
@@ -1301,12 +1301,13 @@ TEST(TestSymReg, d_bacres2)
     operatorDepth["/"] = 1;
     operatorDepth["*"] = 2;
     operatorDepth["+"] = 2;
+    std::vector<double> const paramValues{-1, 0, 0.5, 1, 20};
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", data.x), Var("y", data.y)},
                          std::vector<UnOp>{},
                          std::vector<BinOp>{BinOp::times(), BinOp::plus(), BinOp::divide()},
                          3,
-                         std::vector<double>{},
+                         paramValues,
                          operatorDepth};
 
     auto const p{sr.fit(data.label)};
@@ -1414,7 +1415,7 @@ TEST(TestSymReg, d_glider2)
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
     using BinOp = BinaryOperator<double>;
-
+/*
     std::vector<double> const paramsValue;//{-1, 0, 1};
     std::map<std::string, size_t> operatorDepth;
     operatorDepth["cos"] = 1;
@@ -1427,7 +1428,7 @@ TEST(TestSymReg, d_glider2)
                          3,
                          paramsValue,
                          operatorDepth};
-/*
+*/
     auto const cy{data.y.cos()};
     auto const sy{data.y.sin()};
 
@@ -1442,7 +1443,7 @@ TEST(TestSymReg, d_glider2)
                          3,
                          paramsValue,
                          operatorDepth};
-*/
+
     auto const p{sr.fit(data.label)};
 
     std::cout << p.first << std::endl;
