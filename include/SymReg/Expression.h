@@ -6,6 +6,7 @@
 #include <deque>
 #include <random>
 #include <set>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -22,6 +23,36 @@
 
 namespace sr
 {
+    struct Node
+    {
+        std::string label;
+        std::vector<Node*> children;
+    };
+
+    void freeDot(Node* node)
+    {
+        for (auto const& c: node->children)
+        {
+            freeDot(c);
+            delete c;
+        }
+        
+        node->children.clear();
+    }
+
+    void writeDot(Node* node, std::ostream& out, size_t& counter, std::string const& parent = "")
+    {
+        std::string current = "n" + std::to_string(counter++);
+        
+        out << "    " << current << " [label=\"" << node->label << "\"];\n";
+        
+        if (!parent.empty())
+            out << "    " << parent << " -> " << current << ";\n";
+
+        for (auto* child: node->children)
+            writeDot(child, out, counter, current);
+    }
+
     bool isSymbol(std::string const& s)
     {
         return s == "+" || s == "-" || s == "*" || s == "/";
@@ -130,53 +161,6 @@ namespace sr
         }
     };
 
-    template <typename T>
-    void findBestCombinations(
-        std::vector<T> const& paramValues,
-        size_t n,
-        std::vector<T> const& target,
-        size_t maxResults,
-        std::vector<std::vector<T> >& bestCombinations)
-    {
-        std::deque<ScoredVector<T> > topResults;
-
-        std::vector<T> current(n);
-
-        std::function<void(std::size_t)> recurse = [&] (size_t index)
-        {
-            if (index == n)
-            {
-                std::vector<T> diff(n);
-
-                for (size_t i = 0; i < n; ++i)
-                    diff[i] = current[i] - target[i];
-
-                auto const dist = boost::math::tools::l2_norm(diff);
-
-                auto const it = std::upper_bound(topResults.begin(), topResults.end(), ScoredVector<T>{current, dist});
-                topResults.insert(it, ScoredVector<T>{current, dist});
-
-                if (topResults.size() > maxResults)
-                    topResults.pop_back();
-
-                return;
-            }
-
-            for (auto const& val : paramValues)
-            {
-                current[index] = val;
-                recurse(index + 1);
-            }
-        };
-
-        recurse(0);
-
-        bestCombinations.clear();
-
-        for (const auto& entry : topResults)
-            bestCombinations.push_back(entry.values);
-    }
-
     std::string expr(std::string const& s)
     {
         auto const ca{std::ranges::count(s, 'a')};
@@ -196,6 +180,48 @@ namespace sr
         {
             pos_b = e.find('b', pos_b);
             e.replace(pos_b, 1, std::string("b") + std::to_string(i));
+            pos_b += 1;
+        }
+
+        return e;
+    }
+
+    size_t countOccurrences(std::string const& haystack, std::string const& needle)
+    {
+        if (needle.empty())
+            return 0;
+
+        size_t count = 0;
+        size_t pos = 0;
+
+        while ((pos = haystack.find(needle, pos)) != std::string::npos)
+        {
+            ++count;
+            pos += needle.length();
+        }
+
+        return count;
+    }
+
+    std::string dotExpr(std::string const& s)
+    {
+        auto const ca{countOccurrences(s, "\"a\"")};
+        auto const cb{countOccurrences(s, "\"b\"")};
+        auto e{s};
+        size_t pos_a{0};
+        size_t pos_b{0};
+
+        for (int i{0}; i < ca; ++i)
+        {
+            pos_a = e.find("\"a\"", pos_a);
+            e.replace(pos_a, 3, std::string("\"a") + std::to_string(i) + "\"");
+            pos_a += 1;
+        }
+
+        for (int i{0}; i < cb; ++i)
+        {
+            pos_b = e.find("\"b\"", pos_b);
+            e.replace(pos_b, 3, std::string("\"b") + std::to_string(i) + "\"");
             pos_b += 1;
         }
 
@@ -720,9 +746,6 @@ namespace sr
                     if (std::isnan(bestCost))
                         bestCost = std::numeric_limits<T>::infinity();
 
-                    auto const n{std::pow(paramValues.size(), params.size())};
-                    //auto const limit{0.75 * n};
-                    //auto const limit{std::exp((exhaustiveLimit - n) / n) * n};
                     auto const limit{exhaustiveLimit};
 
                     while (cells.size())
@@ -831,47 +854,7 @@ namespace sr
 
                 auto const x{eval()};
                 auto const loss{(y - x).square().sum()};
-/*
-                if (!discreteParams && loss < epsLoss)
-                    return loss;
 
-                if (discreteParams || possibilities >= exhaustiveLimit)
-                {
-                    auto const roundedParams{roundParams(params, paramValues)};
-
-                    std::vector<std::vector<T> > combinations;
-
-                    findBestCombinations(paramValues, params.size(), roundedParams, exhaustiveLimit, combinations);
-
-                    auto bestParams{roundedParams};
-                    applyParams(bestParams);
-                    auto x{eval()};
-                    auto bestCost{(y - x).square().sum()};
-
-                    //#pragma omp for nowait
-                    for (size_t i = 0; i < combinations.size(); ++i)
-                    {
-                        auto const& c{combinations[i]};
-                        auto e{*this};
-                        e.applyParams(c);
-                        x = e.eval();
-                        auto const cost{(y - x).square().sum()};
-
-                        if (cost < bestCost)
-                        {
-                            bestCost = cost;
-                            bestParams = c;
-                        }
-
-                        if (cost < epsLoss)
-                            i = combinations.size();
-                    }
-
-                    applyParams(bestParams);
-
-                    return bestCost;
-                }
-*/
                 return loss;
             }
 
@@ -900,6 +883,128 @@ namespace sr
                     else
                         return false;
                 }
+            }
+
+            void updateNode(Node* node) const
+            {
+                if (operatorType_ == LinearOp)
+                {
+                    if (operand1Type_ == VariableOperand)
+                    {
+                        if (!aFixed)
+                        {
+                            node->label = "*";
+
+                            node->children.emplace_back(new Node("a"));
+                            node->children.emplace_back(new Node(operand1Variable_->name()));
+                        }
+                        else
+                            node->label = operand1Variable_->name();
+                    }
+                    else
+                    {
+                        if (!aFixed)
+                        {
+                            node->label = "*";
+
+                            node->children.emplace_back(new Node("a"));
+                            Node* n = new Node;
+                            operand1Expression_->updateNode(n);
+                            node->children.emplace_back(n);
+                        }
+                        else
+                            operand1Expression_->updateNode(node);
+                    }
+                }
+                else if (operatorType_ == UnaryOp)
+                {
+                    if (!aFixed)
+                    {
+                        node->label = "*";
+
+                        node->children.emplace_back(new Node("a"));
+                        Node* n1 = new Node(unaryOperator_->name());
+                        Node* n2 = new Node;
+                        operand1Expression_->updateNode(n2);
+                        n1->children.emplace_back(n2);
+                        node->children.emplace_back(n1);
+                    }
+                    else
+                    {
+                        node->label = unaryOperator_->name();
+                        Node* n = new Node;
+                        operand1Expression_->updateNode(n);
+                        node->children.emplace_back(n);
+                    }
+                }
+                else// if (operatorType_ == BinaryOp)
+                {
+                    if (!aFixed)
+                    {
+                        node->label = "*";
+
+                        node->children.emplace_back(new Node("a"));
+                        Node* n1 = new Node(binaryOperator_->name());
+                        Node* n2 = new Node;
+                        operand1Expression_->updateNode(n2);
+                        Node* n3 = new Node;
+                        operand2Expression_->updateNode(n3);
+                        n1->children.emplace_back(n2);
+                        n1->children.emplace_back(n3);
+                        node->children.emplace_back(n1);
+                    }
+                    else
+                    {
+                        node->label = binaryOperator_->name();
+
+                        Node* n1 = new Node;
+                        operand1Expression_->updateNode(n1);
+                        Node* n2 = new Node;
+                        operand2Expression_->updateNode(n2);
+                        node->children.emplace_back(n1);
+                        node->children.emplace_back(n2);
+                    }
+                }
+                    
+                if (!bFixed)
+                {
+                    if (node->label.empty())
+                        node->label = "b";
+                    else
+                    {
+                        auto const n{*node};
+                        node->label = "+";
+
+                        node->children.clear();
+                        node->children.emplace_back(new Node(n));
+                        node->children.emplace_back(new Node("b"));
+                    }
+                }
+                else
+                {
+                    if (aFixed && node->label.empty())
+                        node->label = "0";
+                }
+            }
+
+            std::string dot() const
+            {
+                std::ostringstream oss;
+            
+                oss << "digraph ExpressionTree {\n"
+                    << "    node [shape=circle, style=filled, fillcolor=lightgray];\n"
+                    << "\n";
+
+                Node root;
+                updateNode(&root);
+
+                size_t counter{0};
+                writeDot(&root, oss, counter);
+                freeDot(&root);
+
+                oss << "}\n";
+
+                return dotExpr(oss.str());
             }
 
         private:
@@ -993,89 +1098,6 @@ namespace sr
             Expression<T> expression_;
             const Eigen::Array<double, Eigen::Dynamic, 1> y_;
     };
-
-    template <typename T, typename S>
-    bool generateAndEvaluate(
-        const std::vector<T>& values,
-        size_t n,
-        std::vector<T>& currentCombination,
-        size_t pos,
-        T& bestCost,
-        std::vector<T>& bestParams,
-        Expression<T> expression,
-        const S& y,
-        T epsLoss)
-    {
-        if (pos == n)
-        {
-            expression.applyParams(currentCombination);
-            auto const x{expression.eval()};
-            auto cost{(y - x).square().sum()};
-
-            if (std::isnan(cost))
-                cost = std::numeric_limits<T>::infinity();
-
-            if (cost < bestCost)
-            {
-                bestCost = cost;
-                bestParams = currentCombination;
-            }
-
-            if (cost < epsLoss)
-                return true;
-
-            return false;
-        }
-
-        for (const auto& val : values)
-        {
-            currentCombination[pos] = val;
-
-            if (generateAndEvaluate(values, n, currentCombination, pos + 1, bestCost, bestParams, expression, y, epsLoss))
-                return true;
-        }
-
-        return false;
-    }
-
-    template <typename T, typename S>
-    std::vector<T> optimizeParamsParallel(
-        const std::vector<T>& paramValues,
-        size_t n,
-        Expression<T> const& expression,
-        const S& y,
-        T epsLoss)
-    {
-        T globalBestCost = std::numeric_limits<T>::infinity();
-        std::vector<T> globalBestParams(n);
-
-        //#pragma omp parallel
-        {
-            T localBestCost = std::numeric_limits<T>::infinity();
-            std::vector<T> localBestParams(n);
-            std::vector<T> currentCombination(n);
-
-            //#pragma omp for nowait
-            for (size_t i = 0; i < paramValues.size(); ++i)
-            {
-                currentCombination[0] = paramValues[i];
-
-                if (generateAndEvaluate(paramValues, n, currentCombination, 1, localBestCost, localBestParams, expression, y, epsLoss))
-                    i = paramValues.size();
-            }
-
-            //#pragma omp critical
-            {
-                if (localBestCost < globalBestCost)
-                {
-                    globalBestCost = localBestCost;
-                    globalBestParams = localBestParams;
-                }
-            }
-        }
-
-        return globalBestParams;
-    }
 }
 
 #endif // EXPRESSION_H

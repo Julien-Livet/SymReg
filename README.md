@@ -10,7 +10,7 @@ Then the first iteration starts:
 - We apply then the binary operators defined with ```bin_ops```, for example ```i*(a*x1+b+c*x2+d)+j``` same as ```k*x1+l*x2+m```, etc. We can skip some combinations according to symmetric binary operators.
 
 We can define the depth of operators with ```operatorDepth```.
-At each combination, we compute an optimal expression. If ```paramValues``` is empty, we search optimal parameters with ```ceres```, else we use brute force algorithm if possible.
+At each combination, we compute an optimal expression. If ```paramValues``` is empty, we search optimal parameters with ```ceres```, else we use a discrete optimizer.
 If ```discreteParams``` is ```true```, parameters will be rounded to admissible values after ceres optimization.
 We process like that until the computed loss is less than ```epsLoss```.
 ```eps``` is used to round numeric values and compare with other expressions for example.
@@ -20,7 +20,7 @@ It is possible to call user callback during process with ```callback```.
 
 ```
 sudo apt update
-sudo apt install -y libcurl4-openssl-dev libboost-dev libomp-dev libqt5charts5-dev libmlpack-dev libensmallen-dev libarmadillo-dev libstb-dev pybind11-dev
+sudo apt install -y libcurl4-openssl-dev libboost-dev libomp-dev libqt5charts5-dev libmlpack-dev libensmallen-dev libarmadillo-dev libstb-dev pybind11-dev graphviz
 sudo apt install -y cmake libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev
 cd ~
 mkdir symreg_ws

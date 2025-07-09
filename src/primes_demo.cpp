@@ -1,9 +1,14 @@
 #include "SymReg/SymbolicRegressor.h"
 
 #include <QApplication>
+#include <QLabel>
+#include <QPixmap>
+#include <QProcess>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
+#include <QTemporaryFile>
+#include <QTextStream>
 #include <QThread>
 #include <QTimer>
 
@@ -105,6 +110,26 @@ class DynamicChart : public QObject
                 QObject::connect(series, &QLineSeries::hovered,
                                  chartView, &ChartWithTooltip::showPointTooltip);
             }
+
+            QTemporaryFile dotFile;
+            QTemporaryFile pngFile;
+            pngFile.open();
+            pngFile.close();
+
+            auto const s{e.dot()};
+            dotFile.open();
+
+            QTextStream out(&dotFile);
+            out << QString::fromStdString(s);
+            dotFile.close();
+
+            QProcess::execute("dot", QStringList() << "-Tpng" << dotFile.fileName() << "-o" << pngFile.fileName());
+
+            QPixmap pixmap(pngFile.fileName());
+
+            label->setScaledContents(true);
+            label->setPixmap(pixmap);
+            label->show();
         }
 
         void start()
@@ -146,6 +171,8 @@ class DynamicChart : public QObject
 
             std::map<std::string, size_t> operatorDepth;
             operatorDepth["log"] = 2;
+            
+            label = new QLabel("Graph expression");
 
             srPtr = std::make_unique<SymbolicRegressor<double> >(std::vector<Var>{Var("n", x)},
                                                                  std::vector<UnOp>{UnOp::log()},
@@ -179,6 +206,7 @@ class DynamicChart : public QObject
         std::unique_ptr<SymbolicRegressor<double> > srPtr;
         FitWorker* worker;
         QThread* thread;
+        QLabel* label;
 };
 
 

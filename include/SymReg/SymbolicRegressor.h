@@ -173,7 +173,7 @@ namespace sr
                                         if (cost < epsLoss)
                                         {
                                             j = n;
-                                            break;
+                                            k = un_ops_.size();
                                         }
                                     }
                                 }
@@ -265,7 +265,7 @@ namespace sr
                                             {
                                                 k = bin_ops_.size();
                                                 j1 = n;
-                                                break;
+                                                j2 = n;
                                             }
                                         }
                                     }
