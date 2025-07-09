@@ -1,6 +1,7 @@
 #include "SymReg/SymbolicRegressor.h"
 
 #include <QApplication>
+#include <QDir>
 #include <QLabel>
 #include <QPixmap>
 #include <QProcess>
@@ -111,13 +112,13 @@ class DynamicChart : public QObject
                                  chartView, &ChartWithTooltip::showPointTooltip);
             }
 
-            QTemporaryFile dotFile("/tmp/dot");
+            QTemporaryFile dotFile(QDir::tempPath() + "/dot");
             dotFile.setAutoRemove(false);
-            QTemporaryFile pngFile("/tmp/png");
+            QTemporaryFile pngFile(QDir::tempPath() + "/png");
             pngFile.setAutoRemove(false);
             pngFile.open();
             pngFile.close();
-            QTemporaryFile svgFile("/tmp/svg");
+            QTemporaryFile svgFile(QDir::tempPath() + "/svg");
             svgFile.setAutoRemove(false);
             svgFile.open();
             svgFile.close();
