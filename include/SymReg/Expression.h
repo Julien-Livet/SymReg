@@ -1020,6 +1020,13 @@ namespace sr
 
                 Node root;
                 updateNode(&root);
+                
+                if (!root.tooltip.empty())
+                    root.tooltip += "\n";
+                    
+                root.tooltip += "Symbolic expression: " + str() + "\n"
+                                + "Optimal expression: " + optStr() + "\n"
+                                + "Sympy expression: " + sympyStr();
 
                 size_t counter{0};
                 writeDot(&root, oss, counter);
