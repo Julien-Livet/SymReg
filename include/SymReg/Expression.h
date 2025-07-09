@@ -26,6 +26,7 @@ namespace sr
     struct Node
     {
         std::string label;
+        std::string color;
         std::vector<Node*> children;
     };
 
@@ -44,7 +45,7 @@ namespace sr
     {
         std::string current = "n" + std::to_string(counter++);
         
-        out << "    " << current << " [label=\"" << node->label << "\"];\n";
+        out << "    " << current << " [label=\"" << node->label << "\", shape=circle, style=filled, fillcolor=" << node->color << "];\n";
         
         if (!parent.empty())
             out << "    " << parent << " -> " << current << ";\n";
@@ -887,6 +888,12 @@ namespace sr
 
             void updateNode(Node* node) const
             {
+                std::string const varColor{"blue"};
+                std::string const unColor{"red"};
+                std::string const binColor{"purple"};
+                std::string const aColor{"green"};
+                std::string const bColor{"orange"};
+            
                 if (operatorType_ == LinearOp)
                 {
                     if (operand1Type_ == VariableOperand)
@@ -894,9 +901,10 @@ namespace sr
                         if (!aFixed)
                         {
                             node->label = "*";
+                            node->color = binColor;
 
-                            node->children.emplace_back(new Node("a"));
-                            node->children.emplace_back(new Node(operand1Variable_->name()));
+                            node->children.emplace_back(new Node("a", aColor));
+                            node->children.emplace_back(new Node(operand1Variable_->name(), varColor));
                         }
                         else
                             node->label = operand1Variable_->name();
@@ -906,8 +914,9 @@ namespace sr
                         if (!aFixed)
                         {
                             node->label = "*";
+                            node->color = binColor;
 
-                            node->children.emplace_back(new Node("a"));
+                            node->children.emplace_back(new Node("a", aColor));
                             Node* n = new Node;
                             operand1Expression_->updateNode(n);
                             node->children.emplace_back(n);
@@ -921,9 +930,10 @@ namespace sr
                     if (!aFixed)
                     {
                         node->label = "*";
+                        node->color = binColor;
 
-                        node->children.emplace_back(new Node("a"));
-                        Node* n1 = new Node(unaryOperator_->name());
+                        node->children.emplace_back(new Node("a", aColor));
+                        Node* n1 = new Node(unaryOperator_->name(), unColor);
                         Node* n2 = new Node;
                         operand1Expression_->updateNode(n2);
                         n1->children.emplace_back(n2);
@@ -932,6 +942,8 @@ namespace sr
                     else
                     {
                         node->label = unaryOperator_->name();
+                        node->color = unColor;
+
                         Node* n = new Node;
                         operand1Expression_->updateNode(n);
                         node->children.emplace_back(n);
@@ -942,9 +954,10 @@ namespace sr
                     if (!aFixed)
                     {
                         node->label = "*";
+                        node->color = binColor;
 
-                        node->children.emplace_back(new Node("a"));
-                        Node* n1 = new Node(binaryOperator_->name());
+                        node->children.emplace_back(new Node("a", aColor));
+                        Node* n1 = new Node(binaryOperator_->name(), binColor);
                         Node* n2 = new Node;
                         operand1Expression_->updateNode(n2);
                         Node* n3 = new Node;
@@ -956,6 +969,7 @@ namespace sr
                     else
                     {
                         node->label = binaryOperator_->name();
+                        node->color = binColor;
 
                         Node* n1 = new Node;
                         operand1Expression_->updateNode(n1);
@@ -969,21 +983,28 @@ namespace sr
                 if (!bFixed)
                 {
                     if (node->label.empty())
+                    {
                         node->label = "b";
+                        node->color = bColor;
+                    }
                     else
                     {
                         auto const n{*node};
                         node->label = "+";
+                        node->color = binColor;
 
                         node->children.clear();
                         node->children.emplace_back(new Node(n));
-                        node->children.emplace_back(new Node("b"));
+                        node->children.emplace_back(new Node("b", bColor));
                     }
                 }
                 else
                 {
                     if (aFixed && node->label.empty())
+                    {
                         node->label = "0";
+                        node->color = "white";
+                    }
                 }
             }
 
