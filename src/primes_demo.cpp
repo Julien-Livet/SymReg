@@ -111,10 +111,16 @@ class DynamicChart : public QObject
                                  chartView, &ChartWithTooltip::showPointTooltip);
             }
 
-            QTemporaryFile dotFile;
-            QTemporaryFile pngFile;
+            QTemporaryFile dotFile("/tmp/dot");
+            dotFile.setAutoRemove(false);
+            QTemporaryFile pngFile("/tmp/png");
+            pngFile.setAutoRemove(false);
             pngFile.open();
             pngFile.close();
+            QTemporaryFile svgFile("/tmp/svg");
+            svgFile.setAutoRemove(false);
+            svgFile.open();
+            svgFile.close();
 
             auto const s{e.dot()};
             dotFile.open();
@@ -124,6 +130,7 @@ class DynamicChart : public QObject
             dotFile.close();
 
             QProcess::execute("dot", QStringList() << "-Tpng" << dotFile.fileName() << "-o" << pngFile.fileName());
+            QProcess::execute("dot", QStringList() << "-Tsvg" << dotFile.fileName() << "-o" << svgFile.fileName());
 
             QPixmap pixmap(pngFile.fileName());
 

@@ -27,6 +27,7 @@ namespace sr
     {
         std::string label;
         std::string color;
+        std::string tooltip;
         std::vector<Node*> children;
     };
 
@@ -45,7 +46,7 @@ namespace sr
     {
         std::string current = "n" + std::to_string(counter++);
         
-        out << "    " << current << " [label=\"" << node->label << "\", shape=circle, style=filled, fillcolor=" << node->color << "];\n";
+        out << "    " << current << " [label=\"" << node->label << "\", shape=circle, style=filled, fillcolor=" << node->color << ", tooltip=\"" << node->tooltip << "\"];\n";
         
         if (!parent.empty())
             out << "    " << parent << " -> " << current << ";\n";
@@ -903,7 +904,7 @@ namespace sr
                             node->label = "*";
                             node->color = binColor;
 
-                            node->children.emplace_back(new Node("a", aColor));
+                            node->children.emplace_back(new Node("a", aColor, to_string_c_locale(a)));
                             node->children.emplace_back(new Node(operand1Variable_->name(), varColor));
                         }
                         else
@@ -916,7 +917,7 @@ namespace sr
                             node->label = "*";
                             node->color = binColor;
 
-                            node->children.emplace_back(new Node("a", aColor));
+                            node->children.emplace_back(new Node("a", aColor, to_string_c_locale(a)));
                             Node* n = new Node;
                             operand1Expression_->updateNode(n);
                             node->children.emplace_back(n);
@@ -932,7 +933,7 @@ namespace sr
                         node->label = "*";
                         node->color = binColor;
 
-                        node->children.emplace_back(new Node("a", aColor));
+                        node->children.emplace_back(new Node("a", aColor, to_string_c_locale(a)));
                         Node* n1 = new Node(unaryOperator_->name(), unColor);
                         Node* n2 = new Node;
                         operand1Expression_->updateNode(n2);
@@ -956,7 +957,7 @@ namespace sr
                         node->label = "*";
                         node->color = binColor;
 
-                        node->children.emplace_back(new Node("a", aColor));
+                        node->children.emplace_back(new Node("a", aColor, to_string_c_locale(a)));
                         Node* n1 = new Node(binaryOperator_->name(), binColor);
                         Node* n2 = new Node;
                         operand1Expression_->updateNode(n2);
@@ -986,6 +987,7 @@ namespace sr
                     {
                         node->label = "b";
                         node->color = bColor;
+                        node->tooltip = to_string_c_locale(b);
                     }
                     else
                     {
@@ -995,7 +997,7 @@ namespace sr
 
                         node->children.clear();
                         node->children.emplace_back(new Node(n));
-                        node->children.emplace_back(new Node("b", bColor));
+                        node->children.emplace_back(new Node("b", bColor, to_string_c_locale(b)));
                     }
                 }
                 else
