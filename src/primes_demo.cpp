@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QBuffer>
 #include <QDir>
+#include <QFileDialog>
 #include <QLabel>
 #include <QPixmap>
 #include <QProcess>
@@ -15,6 +16,7 @@
 #include <QThread>
 #include <QTimer>
 #include <QUrl>
+#include <QWebEngineProfile>
 #include <QWebEngineView>
 
 extern "C"
@@ -174,7 +176,9 @@ class DynamicChart : public QObject
 
             if (!svgData.isNull())
             {
-                view->setHtml("<html><body>" + svgData + "</body></html>");
+                QString const html{"<html><body>" + svgData + "</body></html>"};
+
+                view->setHtml(html);
                 view->show();
             }
         }
@@ -221,6 +225,27 @@ class DynamicChart : public QObject
             
             view = new QWebEngineView;
             view->resize(800, 600);
+
+            QObject::connect(view->page()->profile(), &QWebEngineProfile::downloadRequested,
+                             view,
+                             [this] (QWebEngineDownloadItem* download)
+                             {
+                                 auto const fileName{QFileDialog::getSaveFileName(view, "Save file", download->downloadDirectory(), "HTML files (*.html)")};
+                                 
+                                 if (!fileName.isEmpty())
+                                     view->page()->toHtml([this, fileName] (QString const& html)
+                                                          {
+                                                              QFile file(fileName);
+
+                                                              if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+                                                              {
+                                                                  QTextStream out(&file);
+                                                                  out.setCodec("UTF-8");
+                                                                  out << html;
+                                                                  file.close();
+                                                              }
+                                                          });
+                             });
 
             srPtr = std::make_unique<SymbolicRegressor<double> >(std::vector<Var>{Var("n", x)},
                                                                  std::vector<UnOp>{UnOp::log()},
