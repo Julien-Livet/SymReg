@@ -1,3 +1,8 @@
+[![GitHub stars](https://img.shields.io/github/stars/Julien-Livet/SymReg.svg)](https://github.com/Julien-Livet/SymReg/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/Julien-Livet/SymReg.svg)](https://github.com/Julien-Livet/SymReg/issues)
+[![License](https://img.shields.io/github/license/Julien-Livet/SymReg.svg)](LICENSE)
+![CI](https://github.com/Julien-Livet/SymReg/actions/workflows/build.yml/badge.svg)
+
 # SymReg
 
 ## General purpose
