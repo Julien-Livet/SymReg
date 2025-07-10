@@ -20,7 +20,7 @@ It is possible to call user callback during process with ```callback```.
 
 ```
 sudo apt update
-sudo apt install -y libcurl4-openssl-dev libboost-dev libomp-dev libqt5charts5-dev libmlpack-dev libensmallen-dev libarmadillo-dev libstb-dev pybind11-dev graphviz
+sudo apt install -y libcurl4-openssl-dev libboost-dev libomp-dev libqt5charts5-dev libmlpack-dev libensmallen-dev libarmadillo-dev libstb-dev pybind11-dev graphviz libgraphviz-dev
 sudo apt install -y cmake libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev
 cd ~
 mkdir symreg_ws

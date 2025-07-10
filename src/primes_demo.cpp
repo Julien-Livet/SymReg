@@ -8,14 +8,60 @@
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
+#include <QSvgRenderer>
 #include <QTemporaryFile>
 #include <QTextStream>
 #include <QThread>
 #include <QTimer>
 
+extern "C"
+{
+    #include <graphviz/gvc.h>
+    #include <graphviz/cgraph.h>
+}
+
 using namespace QtCharts;
 
 using namespace sr;
+
+QByteArray generateGraphvizSvg(QString const& dotSrc)
+{
+    GVC_t* gvc = gvContext();
+    Agraph_t* g = agmemread(dotSrc.toUtf8().constData());
+
+    if (!g)
+        return {};
+
+    gvLayout(gvc, g, "dot");
+
+    char* data = nullptr;
+    unsigned int length = 0;
+
+    gvRenderData(gvc, g, "svg", &data, &length);
+
+    QByteArray svgData(data, length);
+
+    gvFreeRenderData(data);
+    gvFreeLayout(gvc, g);
+    agclose(g);
+    gvFreeContext(gvc);
+
+    return svgData;
+}
+
+QPixmap renderSvgToPixmap(QByteArray const& svgData, QSize const& size)
+{
+    if (svgData.isNull())
+        return QPixmap();
+
+    QSvgRenderer renderer(svgData);
+    QPixmap pixmap(size);
+    pixmap.fill(Qt::transparent);
+    QPainter painter(&pixmap);
+    renderer.render(&painter);
+
+    return pixmap;
+}
 
 class FitWorker : public QObject
 {
@@ -112,28 +158,8 @@ class DynamicChart : public QObject
                                  chartView, &ChartWithTooltip::showPointTooltip);
             }
 
-            QTemporaryFile dotFile(QDir::tempPath() + "/dot");
-            dotFile.setAutoRemove(false);
-            QTemporaryFile pngFile(QDir::tempPath() + "/png");
-            pngFile.setAutoRemove(false);
-            pngFile.open();
-            pngFile.close();
-            QTemporaryFile svgFile(QDir::tempPath() + "/svg");
-            svgFile.setAutoRemove(false);
-            svgFile.open();
-            svgFile.close();
-
-            auto const s{e.dot()};
-            dotFile.open();
-
-            QTextStream out(&dotFile);
-            out << QString::fromStdString(s);
-            dotFile.close();
-
-            QProcess::execute("dot", QStringList() << "-Tpng" << dotFile.fileName() << "-o" << pngFile.fileName());
-            QProcess::execute("dot", QStringList() << "-Tsvg" << dotFile.fileName() << "-o" << svgFile.fileName());
-
-            QPixmap pixmap(pngFile.fileName());
+            auto const svgData = generateGraphvizSvg(QString::fromStdString(e.dot()));
+            auto const pixmap = renderSvgToPixmap(svgData, QSize(800, 600));
 
             if (!pixmap.isNull())
             {
