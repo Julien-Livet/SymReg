@@ -135,9 +135,12 @@ class DynamicChart : public QObject
 
             QPixmap pixmap(pngFile.fileName());
 
-            label->setScaledContents(true);
-            label->setPixmap(pixmap);
-            label->show();
+            if (!pixmap.isNull())
+            {
+                label->setScaledContents(true);
+                label->setPixmap(pixmap);
+                label->show();
+            }
         }
 
         void start()
