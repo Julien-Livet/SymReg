@@ -137,7 +137,12 @@ namespace sr
                         expressions[i] = paired[i].second;
 
                     if (!paired.empty() && paired.front().first < epsLoss)
+                    {
+                        io.stop();
+                        io_thread.join();
+
                         return paired.front();
+                    }
                 }
 
                 std::map<size_t, std::vector<size_t> > unIndices;
@@ -238,7 +243,12 @@ namespace sr
                             expressions[i] = paired[i].second;
 
                         if (!paired.empty() && paired.front().first < epsLoss)
+                        {
+                            io.stop();
+                            io_thread.join();
+
                             return paired.front();
+                        }
                     }
 
                     //#pragma omp parallel
@@ -340,10 +350,16 @@ namespace sr
                             expressions[i] = paired[i].second;
 
                         if (!paired.empty() && paired.front().first < epsLoss)
+                        {
+                            io.stop();
+                            io_thread.join();
+                            
                             return paired.front();
+                        }
                     }
                 }
-                
+
+                io.stop();
                 io_thread.join();
 
                 if (paired.empty())
