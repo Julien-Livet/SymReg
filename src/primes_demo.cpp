@@ -1,6 +1,7 @@
 #include "SymReg/SymbolicRegressor.h"
 
 #include <QApplication>
+#include <QBuffer>
 #include <QDir>
 #include <QLabel>
 #include <QPixmap>
@@ -13,6 +14,8 @@
 #include <QTextStream>
 #include <QThread>
 #include <QTimer>
+#include <QUrl>
+#include <QWebEngineView>
 
 extern "C"
 {
@@ -47,6 +50,13 @@ QByteArray generateGraphvizSvg(QString const& dotSrc)
     gvFreeContext(gvc);
 
     return svgData;
+}
+
+QString svgToDataUrl(QByteArray const& svgData)
+{
+    QByteArray base64 = svgData.toBase64();
+
+    return "data:image/svg+xml;base64," + base64;
 }
 
 QPixmap renderSvgToPixmap(QByteArray const& svgData, QSize const& size)
@@ -159,13 +169,11 @@ class DynamicChart : public QObject
             }
 
             auto const svgData = generateGraphvizSvg(QString::fromStdString(e.dot()));
-            auto const pixmap = renderSvgToPixmap(svgData, QSize(800, 600));
-
-            if (!pixmap.isNull())
+            
+            if (!svgData.isNull())
             {
-                label->setScaledContents(true);
-                label->setPixmap(pixmap);
-                label->show();
+                view->setHtml("<html><body>" + svgData + "</body></html>");
+                view->show();
             }
         }
 
@@ -209,7 +217,8 @@ class DynamicChart : public QObject
             std::map<std::string, size_t> operatorDepth;
             operatorDepth["log"] = 2;
             
-            label = new QLabel("Graph expression");
+            view = new QWebEngineView;
+            view->resize(800, 600);
 
             srPtr = std::make_unique<SymbolicRegressor<double> >(std::vector<Var>{Var("n", x)},
                                                                  std::vector<UnOp>{UnOp::log()},
@@ -243,7 +252,7 @@ class DynamicChart : public QObject
         std::unique_ptr<SymbolicRegressor<double> > srPtr;
         FitWorker* worker;
         QThread* thread;
-        QLabel* label;
+        QWebEngineView* view;
 };
 
 

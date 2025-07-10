@@ -26,7 +26,7 @@ FetchContent_MakeAvailable(googletest)
 find_package(Ceres REQUIRED)
 find_package(CURL REQUIRED)
 #find_package(OpenMP REQUIRED)
-find_package(Qt5 REQUIRED COMPONENTS Widgets Charts Svg)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Charts Svg WebEngineWidgets)
 find_package(Armadillo REQUIRED)
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 REQUIRED)
@@ -42,7 +42,7 @@ target_link_libraries(primes_demo
 #  asan ubsan
 #  OpenMP::OpenMP_CXX
   pybind11::embed Python3::Python
-  Ceres::ceres Qt5::Widgets Qt5::Charts armadillo Qt5::Svg gvc cgraph)
+  Ceres::ceres Qt5::Widgets Qt5::Charts armadillo Qt5::Svg Qt5::WebEngineWidgets gvc cgraph)
 
 enable_testing()
 add_executable(test_symreg tests/test_symreg.cpp)
