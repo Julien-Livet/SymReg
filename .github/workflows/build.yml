@@ -1,4 +1,4 @@
-name: C++ CI with Ceres
+name: C++ CI
 
 on:
   push:
