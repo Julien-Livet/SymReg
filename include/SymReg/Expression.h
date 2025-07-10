@@ -683,7 +683,7 @@ namespace sr
                 return p;
             }
 
-            T fit(Eigen::Array<T, Eigen::Dynamic, 1> const& y, std::vector<T> const& paramValues = std::vector<T>{}, T epsLoss = 1e-6, bool verbose = false, size_t exhaustiveLimit = 1e5, bool discreteParams = true)
+            T fit(Eigen::Array<T, Eigen::Dynamic, 1> const& y, std::vector<T> const& paramValues = std::vector<T>{}, T epsLoss = 1e-6, bool verbose = false, size_t exhaustiveLimit = 1e5, bool discreteParams = true, std::atomic<bool> const& timeoutTriggered = std::atomic<bool>{false})
             {
                 std::vector<double> params;
                 this->params(params);
@@ -752,6 +752,9 @@ namespace sr
 
                     while (cells.size())
                     {
+                        if (timeoutTriggered)
+                            break;
+
                         auto const cell{cells.front()};
                         cells.front() = cells.back();
                         cells.pop_back();
@@ -766,6 +769,9 @@ namespace sr
 
                         for (auto const& direction: cell.directions)
                         {
+                            if (timeoutTriggered)
+                                break;
+                                
                             Eigen::Array<T, Eigen::Dynamic, 1> const c{cell.param + direction};
 
                             std::vector<Eigen::Array<T, Eigen::Dynamic, 1> > d;

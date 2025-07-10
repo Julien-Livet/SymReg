@@ -1,10 +1,14 @@
 #ifndef SYMBOLICREGRESSOR_H
 #define SYMBOLICREGRESSOR_H
 
+#include <atomic>
+#include <chrono>
 #include <limits>
 #include <map>
+#include <thread>
 #include <vector>
 
+#include <boost/asio.hpp>
 #include <boost/math/tools/norms.hpp>
 
 #include "SymReg/BinaryOperator.h"
@@ -31,11 +35,13 @@ namespace sr
                               std::vector<Expression<T> > const& extraExpressions = std::vector<Expression<T> >{},
                               bool verbose = false,
                               std::function<void(Expression<T> const&, T const&)> const& callback = [] (Expression<T> const&, T const&) {},
-                              bool discreteParams = true)
+                              bool discreteParams = true,
+                              size_t timeout = 20 * 60)
                 : variables_{variables}, un_ops_{un_ops}, bin_ops_{bin_ops},
                   niterations_{niterations}, paramValues_{paramValues},
                   operatorDepth_{operatorDepth}, extraExpressions_{extraExpressions},
-                  verbose_{verbose}, callback_(callback), discreteParams_{discreteParams}
+                  verbose_{verbose}, callback_(callback), discreteParams_{discreteParams},
+                  timeout_{timeout}
             {
                 if (!verbose)
                     auto const f{freopen("/tmp/stderr.txt", "w", stderr)};
@@ -61,10 +67,26 @@ namespace sr
                 std::vector<Expression<T> > expressions;
                 std::vector<T> costs;
 
+                std::atomic<bool> timeoutTriggered = false;
+                boost::asio::io_context io;
+
+                boost::asio::steady_timer timer(io, std::chrono::seconds(timeout_));
+
+                timer.async_wait([&] (boost::system::error_code const& ec)
+                                 {
+                                     if (!ec)
+                                     {
+                                         timeoutTriggered = true;
+                                         io.stop();
+                                     }
+                                 });
+
+                std::thread io_thread([&] () { io.run(); });
+
                 for (auto const& v : variables_)
                 {
                     Expression<T> e{v};
-                    auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_)};
+                    auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_, timeoutTriggered)};
 
                     std::vector<T> params;
                     e.params(params);
@@ -85,7 +107,7 @@ namespace sr
                 for (auto const& expression : extraExpressions_)
                 {
                     Expression<T> e{expression};
-                    auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_)};
+                    auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_, timeoutTriggered)};
 
                     std::vector<T> params;
                     e.params(params);
@@ -129,6 +151,9 @@ namespace sr
 
                 for (size_t i{0}; i < niterations_; ++i)
                 {
+                    if (timeoutTriggered)
+                        break;
+
                     //#pragma omp parallel
                     {
                         size_t const n{expressions.size()};
@@ -139,8 +164,14 @@ namespace sr
                         //#pragma omp for nowait
                         for (size_t j = 0; j < n; ++j)
                         {
+                            if (timeoutTriggered)
+                                break;
+
                             for (size_t k = 0; k < un_ops_.size(); ++k)
                             {
+                                if (timeoutTriggered)
+                                    break;
+
                                 auto const it{std::find(unIndices[k].begin(), unIndices[k].end(), j)};
 
                                 if (it == unIndices[k].end())
@@ -156,7 +187,7 @@ namespace sr
                                     if (count < maxCount)
                                     {
                                         Expression<T> e{un_ops_[k], expressions[j]};
-                                        auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_)};
+                                        auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_, timeoutTriggered)};
 
                                         std::vector<T> params;
                                         e.params(params);
@@ -220,8 +251,14 @@ namespace sr
                         //#pragma omp for nowait
                         for (size_t j1 = 0; j1 < n; ++j1)
                         {
+                            if (timeoutTriggered)
+                                break;
+
                             for (size_t k = 0; k < bin_ops_.size(); ++k)
                             {
+                                if (timeoutTriggered)
+                                    break;
+
                                 size_t j2{0};
 
                                 if (bin_ops_[k].symmetry == BinaryOperator<T>::NonStrictSymmetry)
@@ -231,6 +268,9 @@ namespace sr
 
                                 for (; j2 < n; ++j2)
                                 {
+                                    if (timeoutTriggered)
+                                        break;
+
                                     auto const it{std::find(binIndices[k].begin(), binIndices[k].end(), std::make_pair(j1, j2))};
 
                                     if (it == binIndices[k].end())
@@ -247,7 +287,7 @@ namespace sr
                                         if (count1 < maxCount && count2 < maxCount)
                                         {
                                             Expression<T> e{bin_ops_[k], expressions[j1], expressions[j2]};
-                                            auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_)};
+                                            auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_, timeoutTriggered)};
 
                                             std::vector<T> params;
                                             e.params(params);
@@ -303,6 +343,8 @@ namespace sr
                             return paired.front();
                     }
                 }
+                
+                io_thread.join();
 
                 if (paired.empty())
                     throw std::runtime_error("No expression found!");
@@ -321,6 +363,7 @@ namespace sr
             bool verbose_;
             std::function<void(Expression<T> const&, T const&)> callback_;
             bool discreteParams_;
+            size_t timeout_;
     };
 }
 
