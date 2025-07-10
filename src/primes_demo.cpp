@@ -168,8 +168,10 @@ class DynamicChart : public QObject
                                  chartView, &ChartWithTooltip::showPointTooltip);
             }
 
-            auto const svgData = generateGraphvizSvg(QString::fromStdString(e.dot()));
-            
+            auto dot{QString::fromStdString(e.dot())};
+            dot.insert(dot.indexOf("Symbolic expression"), "Loss: " + QString::number(loss) + "\n");
+            auto const svgData = generateGraphvizSvg(dot);
+
             if (!svgData.isNull())
             {
                 view->setHtml("<html><body>" + svgData + "</body></html>");

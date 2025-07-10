@@ -1024,7 +1024,7 @@ namespace sr
                 if (!root.tooltip.empty())
                     root.tooltip += "\n";
                     
-                root.tooltip += "Symbolic expression: " + str() + "\n"
+                root.tooltip += "Symbolic expression: " + expr(str()) + "\n"
                                 + "Optimal expression: " + optStr() + "\n"
                                 + "Sympy expression: " + sympyStr();
 
