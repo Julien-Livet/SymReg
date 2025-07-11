@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <future>
 #include <limits>
 #include <map>
 #include <thread>
@@ -159,14 +160,17 @@ namespace sr
                     if (timeoutTriggered)
                         break;
 
-                    //#pragma omp parallel
+                    auto function = [this, y, &timeoutTriggered] (Expression<T> e) -> std::pair<T, Expression<T> >
+                                    {
+                                        auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_, timeoutTriggered)};
+
+                                        return std::make_pair(cost, e);
+                                    };
+
                     {
                         size_t const n{expressions.size()};
-                        std::vector<Expression<T> > localExpressions;
-                        std::vector<double> localCosts;
-                        std::map<size_t, std::vector<size_t> > localUnIndices;
+                        std::vector<std::future<std::pair<T, Expression<T> > > > futures;
 
-                        //#pragma omp for nowait
                         for (size_t j = 0; j < n; ++j)
                         {
                             if (timeoutTriggered)
@@ -181,7 +185,7 @@ namespace sr
 
                                 if (it == unIndices[k].end())
                                 {
-                                    localUnIndices[k].emplace_back(j);
+                                    unIndices[k].emplace_back(j);
 
                                     auto const count{std::count(expressions[j].opTree().begin(), expressions[j].opTree().end(), un_ops_[k].name())};
                                     auto maxCount{std::numeric_limits<int>::max()};
@@ -190,44 +194,28 @@ namespace sr
                                         maxCount = operatorDepth_[un_ops_[k].name()];
 
                                     if (count < maxCount)
-                                    {
-                                        Expression<T> e{un_ops_[k], expressions[j]};
-                                        auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_, timeoutTriggered)};
-
-                                        std::vector<T> params;
-                                        e.params(params);
-
-                                        if (boost::math::tools::l2_norm(y) < eps
-                                            && (e.sympyStr() == "0.0" || e.sympyStr() == "0"))
-                                            cost = std::numeric_limits<T>::infinity();
-
-                                        localExpressions.emplace_back(e);
-                                        localCosts.emplace_back(cost);
-                    
-                                        callback_(e, cost);
-
-                                        if (cost < epsLoss)
-                                        {
-                                            j = n;
-                                            k = un_ops_.size();
-                                        }
-                                    }
+                                        futures.emplace_back(std::async(std::launch::async, function, Expression<T>{un_ops_[k], expressions[j]}));
                                 }
                             }
                         }
 
-                        //#pragma omp critical
+                        for (auto& f : futures)
                         {
-                            expressions.insert(expressions.end(), localExpressions.begin(), localExpressions.end());
-                            costs.insert(costs.end(), localCosts.begin(), localCosts.end());
+                            auto const p{f.get()};
 
-                            for (auto& pair: localUnIndices)
-                            {
-                                auto& vec = unIndices[pair.first];
-                                vec.insert(vec.end(),
-                                           std::make_move_iterator(pair.second.begin()),
-                                           std::make_move_iterator(pair.second.end()));
-                            }
+                            costs.emplace_back(p.first);
+                            expressions.emplace_back(p.second);
+                        }
+
+                        for (size_t i{0}; i < expressions.size(); ++i)
+                        {
+                            auto const& e{expressions[i]};
+
+                            if (boost::math::tools::l2_norm(y) < eps
+                                && (e.sympyStr() == "0.0" || e.sympyStr() == "0"))
+                                costs[i] = std::numeric_limits<T>::infinity();
+
+                            callback_(e, costs[i]);
                         }
                     }
 
@@ -251,14 +239,10 @@ namespace sr
                         }
                     }
 
-                    //#pragma omp parallel
                     {
                         size_t const n{expressions.size()};
-                        std::vector<Expression<T>> localExpressions;
-                        std::vector<double> localCosts;
-                        std::map<size_t, std::vector<std::pair<size_t, size_t> > > localBinIndices;
+                        std::vector<std::future<std::pair<T, Expression<T> > > > futures;
 
-                        //#pragma omp for nowait
                         for (size_t j1 = 0; j1 < n; ++j1)
                         {
                             if (timeoutTriggered)
@@ -285,7 +269,7 @@ namespace sr
 
                                     if (it == binIndices[k].end())
                                     {
-                                        localBinIndices[k].emplace_back(j1, j2);
+                                        binIndices[k].emplace_back(j1, j2);
 
                                         auto const count1{std::count(expressions[j1].opTree().begin(), expressions[j1].opTree().end(), bin_ops_[k].name())};
                                         auto const count2{std::count(expressions[j2].opTree().begin(), expressions[j2].opTree().end(), bin_ops_[k].name())};
@@ -295,46 +279,29 @@ namespace sr
                                             maxCount = operatorDepth_[bin_ops_[k].name()];
 
                                         if (count1 < maxCount && count2 < maxCount)
-                                        {
-                                            Expression<T> e{bin_ops_[k], expressions[j1], expressions[j2]};
-                                            auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_, timeoutTriggered)};
-
-                                            std::vector<T> params;
-                                            e.params(params);
-
-                                            if (boost::math::tools::l2_norm(y) < eps
-                                                && (e.sympyStr() == "0.0" || e.sympyStr() == "0"))
-                                                cost = std::numeric_limits<T>::infinity();
-
-                                            localExpressions.emplace_back(e);
-                                            localCosts.emplace_back(cost);
-
-                                            callback_(e, cost);
-
-                                            if (cost < epsLoss)
-                                            {
-                                                k = bin_ops_.size();
-                                                j1 = n;
-                                                j2 = n;
-                                            }
-                                        }
+                                            futures.emplace_back(std::async(std::launch::async, function, Expression<T>{bin_ops_[k], expressions[j1], expressions[j2]}));
                                     }
                                 }
                             }
                         }
 
-                        //#pragma omp critical
+                        for (auto& f : futures)
                         {
-                            expressions.insert(expressions.end(), localExpressions.begin(), localExpressions.end());
-                            costs.insert(costs.end(), localCosts.begin(), localCosts.end());
+                            auto const p{f.get()};
 
-                            for (auto& pair: localBinIndices)
-                            {
-                                auto& vec = binIndices[pair.first];
-                                vec.insert(vec.end(),
-                                           std::make_move_iterator(pair.second.begin()),
-                                           std::make_move_iterator(pair.second.end()));
-                            }
+                            costs.emplace_back(p.first);
+                            expressions.emplace_back(p.second);
+                        }
+
+                        for (size_t i{0}; i < expressions.size(); ++i)
+                        {
+                            auto const& e{expressions[i]};
+
+                            if (boost::math::tools::l2_norm(y) < eps
+                                && (e.sympyStr() == "0.0" || e.sympyStr() == "0"))
+                                costs[i] = std::numeric_limits<T>::infinity();
+
+                            callback_(e, costs[i]);
                         }
                     }
 
