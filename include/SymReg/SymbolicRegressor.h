@@ -6,6 +6,7 @@
 #include <future>
 #include <limits>
 #include <map>
+#include <semaphore>
 #include <thread>
 #include <vector>
 
@@ -160,13 +161,18 @@ namespace sr
                     if (timeoutTriggered)
                         break;
 
-                    auto function = [this, y, &timeoutTriggered] (Expression<T> e) -> std::pair<T, Expression<T> >
+                    constexpr int max_concurrency = 4;
+                    std::counting_semaphore<max_concurrency> sem(max_concurrency);
+
+                    auto function = [this, y, &timeoutTriggered, &sem] (Expression<T> e) -> std::pair<T, Expression<T> >
                                     {
                                         auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_, timeoutTriggered)};
 
+                                        sem.release();
+
                                         return std::make_pair(cost, e);
                                     };
-
+                    
                     {
                         size_t const n{expressions.size()};
                         std::vector<std::future<std::pair<T, Expression<T> > > > futures;
@@ -194,7 +200,11 @@ namespace sr
                                         maxCount = operatorDepth_[un_ops_[k].name()];
 
                                     if (count < maxCount)
+                                    {
+                                        sem.acquire();
+
                                         futures.emplace_back(std::async(std::launch::async, function, Expression<T>{un_ops_[k], expressions[j]}));
+                                    }
                                 }
                             }
                         }
@@ -279,7 +289,11 @@ namespace sr
                                             maxCount = operatorDepth_[bin_ops_[k].name()];
 
                                         if (count1 < maxCount && count2 < maxCount)
+                                        {
+                                            sem.acquire();
+
                                             futures.emplace_back(std::async(std::launch::async, function, Expression<T>{bin_ops_[k], expressions[j1], expressions[j2]}));
+                                        }
                                     }
                                 }
                             }
