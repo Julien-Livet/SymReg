@@ -6,7 +6,6 @@
 #include <future>
 #include <limits>
 #include <map>
-#include <semaphore>
 #include <thread>
 #include <vector>
 
@@ -20,6 +19,31 @@
 
 namespace sr
 {
+    template <typename T>
+    class NumericSubstituter : public GiNaC::map_function
+    {
+        public:        
+            NumericSubstituter(T eps) : eps{eps}
+            {
+            }
+
+            GiNaC::ex operator()(const GiNaC::ex& e) override
+            {
+                if (GiNaC::is_a<GiNaC::numeric>(e) && !e.info(GiNaC::info_flags::symbol))
+                {
+                    auto const n{GiNaC::ex_to<GiNaC::numeric>(e)};
+
+                    if (n.is_real() && std::abs(n.to_double()) < eps)
+                        return 0;
+                }
+
+                return e.map(*this);
+            }
+
+        private:
+            T eps;
+    };
+
     template <typename T>
     class SymbolicRegressor
     {
@@ -156,23 +180,34 @@ namespace sr
                 for (size_t i{0}; i < bin_ops_.size(); ++i)
                     binIndices[i] = std::vector<std::pair<size_t, size_t> >{};
 
+                auto const yNull{boost::math::tools::l2_norm(y) < eps};
+
                 for (size_t i{0}; i < niterations_; ++i)
                 {
                     if (timeoutTriggered)
                         break;
 
-                    constexpr int max_concurrency = 4;
-                    std::counting_semaphore<max_concurrency> sem(max_concurrency);
-
-                    auto function = [this, y, &timeoutTriggered, &sem] (Expression<T> e) -> std::pair<T, Expression<T> >
+                    auto function = [this, y, yNull, &timeoutTriggered] (Expression<T> e) -> std::pair<T, Expression<T> >
                                     {
                                         auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_, timeoutTriggered)};
 
-                                        sem.release();
+                                        if (yNull && cost < epsLoss)
+                                        {
+                                            NumericSubstituter<T> subsFunc(eps);
+                                            auto const ge{subsFunc(e.ginacExpr(eps))};
+
+                                            if (ge.is_zero())
+                                                cost = std::numeric_limits<T>::infinity();
+                                        }
+
+                                        callback_(e, cost);
+
+                                        if (cost < epsLoss)
+                                            timeoutTriggered = true;
 
                                         return std::make_pair(cost, e);
                                     };
-                    
+
                     {
                         size_t const n{expressions.size()};
                         std::vector<std::future<std::pair<T, Expression<T> > > > futures;
@@ -200,11 +235,7 @@ namespace sr
                                         maxCount = operatorDepth_[un_ops_[k].name()];
 
                                     if (count < maxCount)
-                                    {
-                                        sem.acquire();
-
                                         futures.emplace_back(std::async(std::launch::async, function, Expression<T>{un_ops_[k], expressions[j]}));
-                                    }
                                 }
                             }
                         }
@@ -215,17 +246,6 @@ namespace sr
 
                             costs.emplace_back(p.first);
                             expressions.emplace_back(p.second);
-                        }
-
-                        for (size_t i{0}; i < expressions.size(); ++i)
-                        {
-                            auto const& e{expressions[i]};
-
-                            if (boost::math::tools::l2_norm(y) < eps
-                                && (e.sympyStr() == "0.0" || e.sympyStr() == "0"))
-                                costs[i] = std::numeric_limits<T>::infinity();
-
-                            callback_(e, costs[i]);
                         }
                     }
 
@@ -289,11 +309,7 @@ namespace sr
                                             maxCount = operatorDepth_[bin_ops_[k].name()];
 
                                         if (count1 < maxCount && count2 < maxCount)
-                                        {
-                                            sem.acquire();
-
                                             futures.emplace_back(std::async(std::launch::async, function, Expression<T>{bin_ops_[k], expressions[j1], expressions[j2]}));
-                                        }
                                     }
                                 }
                             }
@@ -305,17 +321,6 @@ namespace sr
 
                             costs.emplace_back(p.first);
                             expressions.emplace_back(p.second);
-                        }
-
-                        for (size_t i{0}; i < expressions.size(); ++i)
-                        {
-                            auto const& e{expressions[i]};
-
-                            if (boost::math::tools::l2_norm(y) < eps
-                                && (e.sympyStr() == "0.0" || e.sympyStr() == "0"))
-                                costs[i] = std::numeric_limits<T>::infinity();
-
-                            callback_(e, costs[i]);
                         }
                     }
 

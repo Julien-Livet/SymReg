@@ -12,6 +12,8 @@
 
 #include <ceres/ceres.h>
 
+#include <ginac/ginac.h>
+
 #define ARMA_DONT_PRINT_FAST_MATH_WARNING
 #include <mlpack/methods/kmeans/kmeans.hpp>
 
@@ -561,6 +563,30 @@ namespace sr
                     s = "0";
 
                 return s;
+            }
+
+            GiNaC::ex ginacExpr(T eps = 1e-4) const
+            {
+                auto a_{a};
+                auto b_{b};
+
+                if (aFixed)
+                    a_ = 1;
+
+                if (bFixed)
+                    b_ = 0;
+
+                if (operatorType_ == LinearOp)
+                {
+                    if (operand1Type_ == VariableOperand)
+                        return a_ * GiNaC::symbol(operand1Variable_->name()) + b_;
+                    else
+                        return a_ * operand1Expression_->ginacExpr(eps) + b_;
+                }
+                else if (operatorType_ == UnaryOp)
+                    return a_ * unaryOperator_->ginacOp()(operand1Expression_->ginacExpr(eps)) + b_;
+                else// if (operatorType_ == BinaryOp)
+                    return a_ * binaryOperator_->ginacOp()(operand1Expression_->ginacExpr(eps), operand2Expression_->ginacExpr(eps)) + b_;
             }
 
             std::string sympyStr(T eps = 1e-4) const
