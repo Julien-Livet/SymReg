@@ -25,6 +25,31 @@
 
 namespace sr
 {
+    template <typename T>
+    class NumericSubstituter : public GiNaC::map_function
+    {
+        public:        
+            NumericSubstituter(T eps) : eps{eps}
+            {
+            }
+
+            GiNaC::ex operator()(const GiNaC::ex& e) override
+            {
+                if (GiNaC::is_a<GiNaC::numeric>(e) && !e.info(GiNaC::info_flags::symbol))
+                {
+                    auto const n{GiNaC::ex_to<GiNaC::numeric>(e)};
+
+                    if (n.is_real() && std::abs(n.to_double()) < eps)
+                        return 0;
+                }
+
+                return e.map(*this);
+            }
+
+        private:
+            T eps;
+    };
+
     struct Node
     {
         std::string label;
@@ -565,7 +590,19 @@ namespace sr
                 return s;
             }
 
-            GiNaC::ex ginacExpr(T eps = 1e-4) const
+            std::string ginacStr(T eps = 1e-4) const
+            {
+                std::ostringstream oss;
+
+                NumericSubstituter<T> subsFunc(eps);
+                auto const ge{subsFunc(ginacExpr())};
+
+                oss << ge;
+
+                return oss.str();
+            }
+
+            GiNaC::ex ginacExpr() const
             {
                 auto a_{a};
                 auto b_{b};
@@ -581,12 +618,12 @@ namespace sr
                     if (operand1Type_ == VariableOperand)
                         return a_ * GiNaC::symbol(operand1Variable_->name()) + b_;
                     else
-                        return a_ * operand1Expression_->ginacExpr(eps) + b_;
+                        return a_ * operand1Expression_->ginacExpr() + b_;
                 }
                 else if (operatorType_ == UnaryOp)
-                    return a_ * unaryOperator_->ginacOp()(operand1Expression_->ginacExpr(eps)) + b_;
+                    return a_ * unaryOperator_->ginacOp()(operand1Expression_->ginacExpr()) + b_;
                 else// if (operatorType_ == BinaryOp)
-                    return a_ * binaryOperator_->ginacOp()(operand1Expression_->ginacExpr(eps), operand2Expression_->ginacExpr(eps)) + b_;
+                    return a_ * binaryOperator_->ginacOp()(operand1Expression_->ginacExpr(), operand2Expression_->ginacExpr()) + b_;
             }
 
             std::string sympyStr(T eps = 1e-4) const

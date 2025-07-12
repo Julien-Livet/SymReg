@@ -20,31 +20,6 @@
 namespace sr
 {
     template <typename T>
-    class NumericSubstituter : public GiNaC::map_function
-    {
-        public:        
-            NumericSubstituter(T eps) : eps{eps}
-            {
-            }
-
-            GiNaC::ex operator()(const GiNaC::ex& e) override
-            {
-                if (GiNaC::is_a<GiNaC::numeric>(e) && !e.info(GiNaC::info_flags::symbol))
-                {
-                    auto const n{GiNaC::ex_to<GiNaC::numeric>(e)};
-
-                    if (n.is_real() && std::abs(n.to_double()) < eps)
-                        return 0;
-                }
-
-                return e.map(*this);
-            }
-
-        private:
-            T eps;
-    };
-
-    template <typename T>
     class SymbolicRegressor
     {
         public:
@@ -194,7 +169,7 @@ namespace sr
                                         if (yNull && cost < epsLoss)
                                         {
                                             NumericSubstituter<T> subsFunc(eps);
-                                            auto const ge{subsFunc(e.ginacExpr(eps))};
+                                            auto const ge{subsFunc(e.ginacExpr())};
 
                                             if (ge.is_zero())
                                                 cost = std::numeric_limits<T>::infinity();
