@@ -168,18 +168,18 @@ class DynamicChart : public QObject
 
                 QObject::connect(series, &QLineSeries::hovered,
                                  chartView, &ChartWithTooltip::showPointTooltip);
-            }
 
-            auto dot{QString::fromStdString(e.dot())};
-            dot.insert(dot.indexOf("Symbolic expression"), "Loss: " + QString::number(loss) + "\n");
-            auto const svgData = generateGraphvizSvg(dot);
+                auto dot{QString::fromStdString(e.dot())};
+                dot.insert(dot.indexOf("Symbolic expression"), "Loss: " + QString::number(loss) + "\n");
+                auto const svgData = generateGraphvizSvg(dot);
 
-            if (!svgData.isNull())
-            {
-                QString const html{"<html><body>" + svgData + "</body></html>"};
+                if (!svgData.isNull())
+                {
+                    QString const html{"<html><body>" + svgData + "</body></html>"};
 
-                view->setHtml(html);
-                view->show();
+                    view->setHtml(html);
+                    view->show();
+                }
             }
         }
 

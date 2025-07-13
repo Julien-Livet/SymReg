@@ -253,7 +253,7 @@ namespace sr
             std::string name_;
             std::function<Eigen::Array<T, Eigen::Dynamic, 1>(Eigen::Array<T, Eigen::Dynamic, 1>)> op_;
             std::function<Eigen::Array<ceres::Jet<T, 4>, Eigen::Dynamic, 1>(Eigen::Array<ceres::Jet<T, 4>, Eigen::Dynamic, 1>)> jetOp_;
-            std::function<GiNaC::ex(GiNaC::ex const&)> const& ginacOp_;
+            std::function<GiNaC::ex(GiNaC::ex const&)> ginacOp_;
     };
 }
 

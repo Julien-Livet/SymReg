@@ -43,4 +43,5 @@ cmake ..
 make -j$(nproc)
 ./primes_demo
 ctest -V
+time ./test_symreg --gtest_filter=TestSymReg.Line
 ```

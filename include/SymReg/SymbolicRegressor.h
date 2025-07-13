@@ -167,11 +167,13 @@ namespace sr
                                         auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_, timeoutTriggered)};
 
                                         if (yNull && cost < epsLoss)
-                                        {
+                                        {/*
                                             NumericSubstituter<T> subsFunc(eps);
-                                            auto const ge{subsFunc(e.ginacExpr())};
+                                            auto const ge{subsFunc(GiNaC::expand(e.ginacExpr())).normal()};
 
                                             if (ge.is_zero())
+                                                cost = std::numeric_limits<T>::infinity();*/
+                                            if (e.isNull(eps))
                                                 cost = std::numeric_limits<T>::infinity();
                                         }
 

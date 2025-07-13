@@ -33,14 +33,19 @@ namespace sr
             {
             }
 
-            GiNaC::ex operator()(const GiNaC::ex& e) override
+            GiNaC::ex operator()(GiNaC::ex const& e) override
             {
                 if (GiNaC::is_a<GiNaC::numeric>(e) && !e.info(GiNaC::info_flags::symbol))
                 {
                     auto const n{GiNaC::ex_to<GiNaC::numeric>(e)};
 
-                    if (n.is_real() && std::abs(n.to_double()) < eps)
-                        return 0;
+                    if (n.is_real())
+                    {
+                        if (std::abs(n.to_double()) < eps)
+                            return 0;
+                        else
+                            return GiNaC::numeric(std::to_string(std::round(n.to_double() / eps) * eps).c_str());
+                    }
                 }
 
                 return e.map(*this);
@@ -595,7 +600,7 @@ namespace sr
                 std::ostringstream oss;
 
                 NumericSubstituter<T> subsFunc(eps);
-                auto const ge{subsFunc(ginacExpr())};
+                auto const ge{subsFunc(GiNaC::expand(ginacExpr())).normal()};
 
                 oss << ge;
 
@@ -624,6 +629,33 @@ namespace sr
                     return a_ * unaryOperator_->ginacOp()(operand1Expression_->ginacExpr()) + b_;
                 else// if (operatorType_ == BinaryOp)
                     return a_ * binaryOperator_->ginacOp()(operand1Expression_->ginacExpr(), operand2Expression_->ginacExpr()) + b_;
+            }
+
+            Expression<T> random() const
+            {
+                Expression<T> e{*this};
+
+                if (e.operatorType_ == LinearOp)
+                {
+                    if (e.operand1Type_ == VariableOperand)
+                    {
+                        auto x{e.operand1Variable_->value()};
+                        x.setRandom();
+                        auto const y{2 * Eigen::Array<T, Eigen::Dynamic, 1>{x.abs()} * Eigen::Array<T, Eigen::Dynamic, 1>{e.operand1Variable_->value()}};
+                        e.operand1Variable_ = std::make_unique<Variable<T> >(e.operand1Variable_->name(), y);
+                    }
+                    else
+                        e.operand1Expression_ = std::make_unique<Expression<T> >(e.operand1Expression_->random());
+                }
+                else if (e.operatorType_ == UnaryOp)
+                    e.operand1Expression_ = std::make_unique<Expression<T> >(e.operand1Expression_->random());
+                else// if (e.operatorType_ == BinaryOp)
+                {
+                    e.operand1Expression_ = std::make_unique<Expression<T> >(e.operand1Expression_->random());
+                    e.operand2Expression_ = std::make_unique<Expression<T> >(e.operand2Expression_->random());
+                }
+                
+                return e;
             }
 
             std::string sympyStr(T eps = 1e-4) const
@@ -935,7 +967,7 @@ namespace sr
             }
         
             bool isNull(T eps = 1e-4) const
-            {
+            {/*
                 if (operatorType_ == LinearOp)
                 {
                     if (operand1Type_ == VariableOperand)
@@ -953,7 +985,17 @@ namespace sr
                         return (std::abs(a) < eps || (operand1Expression_->isNull() || operand2Expression_->isNull())) && (std::abs(b) < eps || bFixed);
                     else
                         return false;
+                }*/
+                auto const e{random()};
+                Eigen::Matrix<T, Eigen::Dynamic, 1> const x{e.eval()};
+
+                if (!(x.norm() < eps))
+                {
+                    std::cout << "Null " << x.norm() << " " << e.optStr() << std::endl;
+                    std::cout << "Normal " << Eigen::Matrix<T, Eigen::Dynamic, 1>{eval()}.norm() << std::endl;
                 }
+
+                return (x.norm() < eps);
             }
 
             void updateNode(Node* node) const
