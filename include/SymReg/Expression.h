@@ -1,5 +1,5 @@
-#ifndef EXPRESSION_H
-#define EXPRESSION_H
+#ifndef SYMREG_EXPRESSION_H
+#define SYMREG_EXPRESSION_H
 
 #include <algorithm>
 #include <any>
@@ -12,8 +12,6 @@
 
 #include <ceres/ceres.h>
 
-#include <ginac/ginac.h>
-
 #define ARMA_DONT_PRINT_FAST_MATH_WARNING
 #include <mlpack/methods/kmeans/kmeans.hpp>
 
@@ -25,36 +23,6 @@
 
 namespace sr
 {
-    template <typename T>
-    class NumericSubstituter : public GiNaC::map_function
-    {
-        public:        
-            NumericSubstituter(T eps) : eps{eps}
-            {
-            }
-
-            GiNaC::ex operator()(GiNaC::ex const& e) override
-            {
-                if (GiNaC::is_a<GiNaC::numeric>(e) && !e.info(GiNaC::info_flags::symbol))
-                {
-                    auto const n{GiNaC::ex_to<GiNaC::numeric>(e)};
-
-                    if (n.is_real())
-                    {
-                        if (std::abs(n.to_double()) < eps)
-                            return 0;
-                        else
-                            return GiNaC::numeric(std::to_string(std::round(n.to_double() / eps) * eps).c_str());
-                    }
-                }
-
-                return e.map(*this);
-            }
-
-        private:
-            T eps;
-    };
-
     struct Node
     {
         std::string label;
@@ -70,16 +38,16 @@ namespace sr
             freeDot(c);
             delete c;
         }
-        
+
         node->children.clear();
     }
 
     void writeDot(Node* node, std::ostream& out, size_t& counter, std::string const& parent = "")
     {
         std::string current = "n" + std::to_string(counter++);
-        
+
         out << "    " << current << " [label=\"" << node->label << "\", shape=circle, style=filled, fillcolor=" << node->color << ", tooltip=\"" << node->tooltip << "\"];\n";
-        
+
         if (!parent.empty())
             out << "    " << parent << " -> " << current << ";\n";
 
@@ -100,7 +68,7 @@ namespace sr
         {
             const auto size_a = a.size();
             const auto size_b = b.size();
-            
+
             if (size_a != size_b)
                 return size_a < size_b;
 
@@ -158,7 +126,7 @@ namespace sr
             return params;
 
         std::vector<T> rounded;
-        
+
         rounded.reserve(params.size());
 
         for (auto const& p : params)
@@ -277,14 +245,14 @@ namespace sr
 
             bool aFixed{false};
             bool bFixed{false};
-            
+
             enum OperandType
             {
                 NoOperand,
                 VariableOperand,
                 ExpressionOperand
             };
-            
+
             enum OperatorType
             {
                 LinearOp,
@@ -297,7 +265,7 @@ namespace sr
                                                       operatorType_{LinearOp}, unaryOperator_{}, binaryOperator_{}
             {
             }
-            
+
             Expression(UnaryOperator<T> const& op, Expression const& operand)
              : operand1Type_{ExpressionOperand}, operand1Variable_{}, operand1Expression_{std::make_unique<Expression<T> >(operand)},
                operand2Type_{NoOperand}, operand2Variable_{}, operand2Expression_{},
@@ -308,7 +276,7 @@ namespace sr
 
                 opTree_.emplace_back(op.name());
             }
-            
+
             Expression(BinaryOperator<T> const& op, Expression const& operand1, Expression const& operand2)
              : operand1Type_{ExpressionOperand}, operand1Variable_{}, operand1Expression_{std::make_unique<Expression<T> >(operand1)},
                operand2Type_{ExpressionOperand}, operand2Variable_{}, operand2Expression_{std::make_unique<Expression<T> >(operand2)},
@@ -362,13 +330,13 @@ namespace sr
                     *this = std::move(add);
                 }
             }
-            
+
             Expression(Expression<T> const& other)
              : operand1Type_{other.operand1Type_}, operand1Variable_{}, operand1Expression_{},
                operand2Type_{other.operand2Type_}, operand2Variable_{}, operand2Expression_{},
                operatorType_{other.operatorType_}, unaryOperator_{}, binaryOperator_{},
                aFixed{other.aFixed}, bFixed{other.bFixed}, a{other.a}, b{other.b},
-               ja{other.ja}, jb{other.jb}     
+               ja{other.ja}, jb{other.jb}
             {
                 if (other.operand1Variable_)
                     operand1Variable_ = std::make_unique<Variable<T> >(*other.operand1Variable_);
@@ -400,6 +368,12 @@ namespace sr
                 b = other.b;
                 ja = other.ja;
                 jb = other.jb;
+                operand1Variable_.reset();
+                operand1Expression_.reset();
+                operand2Variable_.reset();
+                operand2Expression_.reset();
+                unaryOperator_.reset();
+                binaryOperator_.reset();
 
                 if (other.operand1Variable_)
                     operand1Variable_ = std::make_unique<Variable<T> >(*other.operand1Variable_);
@@ -595,19 +569,12 @@ namespace sr
                 return s;
             }
 
-            std::string ginacStr(T eps = 1e-4) const
+            std::string symStr() const
             {
-                std::ostringstream oss;
-
-                NumericSubstituter<T> subsFunc(eps);
-                auto const ge{subsFunc(GiNaC::expand(ginacExpr())).normal()};
-
-                oss << ge;
-
-                return oss.str();
+                return symExpr().simplify().str();
             }
 
-            GiNaC::ex ginacExpr() const
+            sym::Expression<T> symExpr() const
             {
                 auto a_{a};
                 auto b_{b};
@@ -621,14 +588,14 @@ namespace sr
                 if (operatorType_ == LinearOp)
                 {
                     if (operand1Type_ == VariableOperand)
-                        return a_ * GiNaC::symbol(operand1Variable_->name()) + b_;
+                        return a_ * sym::Symbol(operand1Variable_->name()) + b_;
                     else
-                        return a_ * operand1Expression_->ginacExpr() + b_;
+                        return a_ * operand1Expression_->symExpr() + b_;
                 }
                 else if (operatorType_ == UnaryOp)
-                    return a_ * unaryOperator_->ginacOp()(operand1Expression_->ginacExpr()) + b_;
+                    return a_ * unaryOperator_->symOp()(operand1Expression_->symExpr()) + b_;
                 else// if (operatorType_ == BinaryOp)
-                    return a_ * binaryOperator_->ginacOp()(operand1Expression_->ginacExpr(), operand2Expression_->ginacExpr()) + b_;
+                    return a_ * binaryOperator_->symOp()(operand1Expression_->symExpr(), operand2Expression_->symExpr()) + b_;
             }
 
             Expression<T> random() const
@@ -654,7 +621,7 @@ namespace sr
                     e.operand1Expression_ = std::make_unique<Expression<T> >(e.operand1Expression_->random());
                     e.operand2Expression_ = std::make_unique<Expression<T> >(e.operand2Expression_->random());
                 }
-                
+
                 return e;
             }
 
@@ -681,7 +648,7 @@ namespace sr
 
                     py::object expr_rounded = round_expr(expanded);
                     simplified = sympy.attr("simplify")(expr_rounded);
-                    
+
                     return py::str(simplified);
                 }
                 catch (py::error_already_set const& e)
@@ -689,7 +656,7 @@ namespace sr
                     std::cout << e.what() << std::endl;
                 }
 
-                return optStr();   
+                return optStr();
             }
 
             void params(std::vector<T>& params) const
@@ -809,7 +776,7 @@ namespace sr
                     for (auto const& c: initialCells)
                     {
                         std::vector<Eigen::Array<T, Eigen::Dynamic, 1> > directions;
-                                        
+
                         for (size_t i{0}; i < c.size(); ++i)
                         {
                             Eigen::Array<T, Eigen::Dynamic, 1> direction(c.size());
@@ -866,7 +833,7 @@ namespace sr
                         {
                             if (timeoutTriggered)
                                 break;
-                                
+
                             Eigen::Array<T, Eigen::Dynamic, 1> const c{cell.param + direction};
 
                             std::vector<Eigen::Array<T, Eigen::Dynamic, 1> > d;
@@ -951,7 +918,7 @@ namespace sr
                 if (discreteParams)
                 {
                     auto const roundedParams{roundParams(params, paramValues)};
-                    
+
                     applyParams(roundedParams);
                 }
 
@@ -965,7 +932,7 @@ namespace sr
             {
                 return opTree_;
             }
-        
+
             bool isNull(T eps = 1e-4) const
             {/*
                 if (operatorType_ == LinearOp)
@@ -989,12 +956,6 @@ namespace sr
                 auto const e{random()};
                 Eigen::Matrix<T, Eigen::Dynamic, 1> const x{e.eval()};
 
-                if (!(x.norm() < eps))
-                {
-                    std::cout << "Null " << x.norm() << " " << e.optStr() << std::endl;
-                    std::cout << "Normal " << Eigen::Matrix<T, Eigen::Dynamic, 1>{eval()}.norm() << std::endl;
-                }
-
                 return (x.norm() < eps);
             }
 
@@ -1005,7 +966,7 @@ namespace sr
                 std::string const binColor{"purple"};
                 std::string const aColor{"green"};
                 std::string const bColor{"orange"};
-            
+
                 if (operatorType_ == LinearOp)
                 {
                     if (operand1Type_ == VariableOperand)
@@ -1091,7 +1052,7 @@ namespace sr
                         node->children.emplace_back(n2);
                     }
                 }
-                    
+
                 if (!bFixed)
                 {
                     if (node->label.empty())
@@ -1124,17 +1085,17 @@ namespace sr
             std::string dot() const
             {
                 std::ostringstream oss;
-            
+
                 oss << "digraph ExpressionTree {\n"
                     << "    node [shape=circle, style=filled, fillcolor=lightgray];\n"
                     << "\n";
 
                 Node root;
                 updateNode(&root);
-                
+
                 if (!root.tooltip.empty())
                     root.tooltip += "\n";
-                    
+
                 root.tooltip += "Symbolic expression: " + expr(str()) + "\n"
                                 + "Optimal expression: " + optStr() + "\n"
                                 + "Sympy expression: " + sympyStr();
@@ -1241,4 +1202,4 @@ namespace sr
     };
 }
 
-#endif // EXPRESSION_H
+#endif // SYMREG_EXPRESSION_H

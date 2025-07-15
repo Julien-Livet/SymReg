@@ -1,5 +1,5 @@
-#ifndef SYMBOLICREGRESSOR_H
-#define SYMBOLICREGRESSOR_H
+#ifndef SYMREG_SYMBOLICREGRESSOR_H
+#define SYMREG_SYMBOLICREGRESSOR_H
 
 #include <atomic>
 #include <chrono>
@@ -62,7 +62,7 @@ namespace sr
             {
                 return bin_ops_;
             }
-            
+
             std::pair<T, Expression<T> > fit(Eigen::Array<T, Eigen::Dynamic, 1> const& y)
             {
                 std::vector<Expression<T> > expressions;
@@ -98,7 +98,7 @@ namespace sr
 
                     expressions.emplace_back(e);
                     costs.emplace_back(cost);
-                    
+
                     callback_(e, cost);
 
                     if (cost < epsLoss)
@@ -119,7 +119,7 @@ namespace sr
 
                     expressions.emplace_back(e);
                     costs.emplace_back(cost);
-                    
+
                     callback_(e, cost);
 
                     if (cost < epsLoss)
@@ -167,13 +167,8 @@ namespace sr
                                         auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_, timeoutTriggered)};
 
                                         if (yNull && cost < epsLoss)
-                                        {/*
-                                            NumericSubstituter<T> subsFunc(eps);
-                                            auto const ge{subsFunc(GiNaC::expand(e.ginacExpr())).normal()};
-
-                                            if (ge.is_zero())
-                                                cost = std::numeric_limits<T>::infinity();*/
-                                            if (e.isNull(eps))
+                                        {
+                                            if (e.symExpr().expand().simplify().isNull(eps))
                                                 cost = std::numeric_limits<T>::infinity();
                                         }
 
@@ -316,7 +311,7 @@ namespace sr
                         {
                             io.stop();
                             io_thread.join();
-                            
+
                             return paired.front();
                         }
                     }
@@ -346,4 +341,4 @@ namespace sr
     };
 }
 
-#endif // SYMBOLICREGRESSOR_H
+#endif // SYMREG_SYMBOLICREGRESSOR_H

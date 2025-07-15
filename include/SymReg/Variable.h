@@ -1,5 +1,5 @@
-#ifndef VARIABLE_H
-#define VARIABLE_H
+#ifndef SYMREG_VARIABLE_H
+#define SYMREG_VARIABLE_H
 
 #include <limits>
 #include <string>
@@ -40,4 +40,4 @@ namespace sr
     };
 }
 
-#endif // VARIABLE_H
+#endif // SYMREG_VARIABLE_H

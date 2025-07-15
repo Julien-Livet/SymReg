@@ -29,8 +29,7 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets Charts Svg WebEngineWidgets)
 find_package(Armadillo REQUIRED)
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(GINAC REQUIRED ginac)
+find_package(Sym REQUIRED)
 
 include_directories(include)
 
@@ -42,14 +41,14 @@ add_executable(primes_demo src/primes_demo.cpp)
 target_link_libraries(primes_demo
 #  asan ubsan
   pybind11::embed Python3::Python
-  Ceres::ceres Qt5::Widgets Qt5::Charts armadillo Qt5::Svg Qt5::WebEngineWidgets gvc cgraph ${GINAC_LIBRARIES})
+  Ceres::ceres Qt5::Widgets Qt5::Charts armadillo Qt5::Svg Qt5::WebEngineWidgets gvc cgraph)
 
 enable_testing()
 add_executable(test_symreg tests/test_symreg.cpp)
 target_link_libraries(test_symreg
 #  asan ubsan
   pybind11::embed Python3::Python
-  Ceres::ceres CURL::libcurl gtest gtest_main armadillo ${GINAC_LIBRARIES})
+  Ceres::ceres CURL::libcurl gtest gtest_main armadillo)
 
 math(EXPR TIMEOUT "3 * 60 * 60")
 add_test(NAME TestSymReg COMMAND test_symreg)
@@ -57,3 +56,38 @@ set_tests_properties(TestSymReg PROPERTIES TIMEOUT ${TIMEOUT})
 
 include(GoogleTest)
 gtest_discover_tests(test_symreg)
+
+install(DIRECTORY include/SymReg DESTINATION include)
+
+add_library(SymReg INTERFACE)
+target_include_directories(SymReg INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+include(CMakePackageConfigHelpers)
+
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/SymRegConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/SymRegConfig.cmake
+    INSTALL_DESTINATION lib/cmake/SymReg
+)
+
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/SymRegConfigVersion.cmake
+    VERSION 1.0.0
+    COMPATIBILITY SameMajorVersion
+)
+
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/SymRegConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/SymRegConfigVersion.cmake
+    DESTINATION lib/cmake/SymReg
+)
+
+install(TARGETS SymReg EXPORT SymRegTargets)
+
+install(EXPORT SymRegTargets
+    NAMESPACE SymReg::
+    DESTINATION lib/cmake/SymReg
+)

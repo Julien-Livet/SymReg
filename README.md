@@ -25,7 +25,7 @@ It is possible to call user callback during process with ```callback```.
 
 ```
 sudo apt update
-sudo apt install -y cmake make git libcurl4-openssl-dev libboost-dev libqt5charts5-dev libmlpack-dev libensmallen-dev libarmadillo-dev libstb-dev pybind11-dev graphviz libgraphviz-dev libqt5svg5-dev qtwebengine5-dev build-essential python3-sympy libginac-dev
+sudo apt install -y cmake make git libcurl4-openssl-dev libboost-dev libqt5charts5-dev libmlpack-dev libensmallen-dev libarmadillo-dev libstb-dev pybind11-dev graphviz libgraphviz-dev libqt5svg5-dev qtwebengine5-dev build-essential python3-sympy
 sudo apt install -y libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev
 cd ~
 mkdir symreg_ws
@@ -37,10 +37,18 @@ mkdir build && cd build
 cmake .. -DBUILD_TESTING=OFF
 make -j$(nproc)
 sudo make install
+cd ../..
+git clone https://github.com/Julien-Livet/Sym.git
+cd Sym
+mkdir build && cd build
+cmake ..
+make -j$(nproc)
+sudo make install
 cd ../../SymReg
 mkdir build && cd build
 cmake ..
 make -j$(nproc)
+sudo make install
 ./primes_demo
 ctest -V
 time ./test_symreg --gtest_filter=TestSymReg.Line

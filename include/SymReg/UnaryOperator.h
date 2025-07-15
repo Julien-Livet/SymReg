@@ -1,5 +1,5 @@
-#ifndef UNARYOPERATOR_H
-#define UNARYOPERATOR_H
+#ifndef SYMREG_UNARYOPERATOR_H
+#define SYMREG_UNARYOPERATOR_H
 
 #include <functional>
 #include <limits>
@@ -9,46 +9,7 @@
 
 #include <ceres/ceres.h>
 
-#include <ginac/ginac.h>
-
-namespace GiNaC
-{
-    DECLARE_FUNCTION_1P(inverse)
-
-    GiNaC::ex inverse_eval(GiNaC::ex const& a)
-    {
-        if (is_a<GiNaC::numeric>(a))
-            return 1 / a;
-
-        return inverse(a);
-    }
-
-    REGISTER_FUNCTION(inverse, eval_func(inverse_eval))
-
-    DECLARE_FUNCTION_1P(floor)
-
-    GiNaC::ex floor_eval(GiNaC::ex const& a)
-    {
-        if (is_a<GiNaC::numeric>(a))
-            return std::floor(GiNaC::ex_to<GiNaC::numeric>(a).to_double());
-
-        return floor(a);
-    }
-
-    REGISTER_FUNCTION(floor, eval_func(floor_eval))
-
-    DECLARE_FUNCTION_1P(ceil)
-
-    GiNaC::ex ceil_eval(GiNaC::ex const& a)
-    {
-        if (is_a<GiNaC::numeric>(a))
-            return std::ceil(GiNaC::ex_to<GiNaC::numeric>(a).to_double());
-
-        return ceil(a);
-    }
-
-    REGISTER_FUNCTION(ceil, eval_func(ceil_eval))
-}
+#include <Sym/Expression.h>
 
 namespace sr
 {
@@ -59,8 +20,8 @@ namespace sr
             UnaryOperator(std::string const& name,
                           std::function<Eigen::Array<T, Eigen::Dynamic, 1>(Eigen::Array<T, Eigen::Dynamic, 1>)> const& op,
                           std::function<Eigen::Array<ceres::Jet<T, 4>, Eigen::Dynamic, 1>(Eigen::Array<ceres::Jet<T, 4>, Eigen::Dynamic, 1>)> const& jetOp,
-                          std::function<GiNaC::ex(GiNaC::ex const&)> const& ginacOp) :
-                name_{name}, op_{op}, jetOp_{jetOp}, ginacOp_{ginacOp}
+                          std::function<sym::Expression<T>(sym::Expression<T> const&)> const& symOp) :
+                name_{name}, op_{op}, jetOp_{jetOp}, symOp_{symOp}
             {
             }
 
@@ -79,9 +40,9 @@ namespace sr
                 return jetOp_;
             }
 
-            auto const& ginacOp() const
+            auto const& symOp() const
             {
-                return ginacOp_;
+                return symOp_;
             }
 
             static UnaryOperator log()
@@ -89,7 +50,7 @@ namespace sr
                 return UnaryOperator{"log",
                                      [] (auto const& x) {return x.log();},
                                      [] (auto const& x) {return x.log();},
-                                     [] (auto const& x) {return GiNaC::log(x);}};
+                                     [] (auto const& x) {return sym::log(x);}};
             }
 
             static UnaryOperator exp()
@@ -97,7 +58,7 @@ namespace sr
                 return UnaryOperator{"exp",
                                      [] (auto const& x) {return x.exp();},
                                      [] (auto const& x) {return x.exp();},
-                                     [] (auto const& x) {return GiNaC::exp(x);}};
+                                     [] (auto const& x) {return sym::exp(x);}};
             }
 
             static UnaryOperator cot()
@@ -105,7 +66,7 @@ namespace sr
                 return UnaryOperator{"cot",
                                      [] (auto const& x) {return x.tan().inverse();},
                                      [] (auto const& x) {return x.tan().inverse();},
-                                     [] (auto const& x) {return GiNaC::inverse(GiNaC::tan(x));}};
+                                     [] (auto const& x) {return sym::cot(x);}};
             }
 
             static UnaryOperator cos()
@@ -113,7 +74,7 @@ namespace sr
                 return UnaryOperator{"cos",
                                      [] (auto const& x) {return x.cos();},
                                      [] (auto const& x) {return x.cos();},
-                                     [] (auto const& x) {return GiNaC::cos(x);}};
+                                     [] (auto const& x) {return sym::cos(x);}};
             }
 
             static UnaryOperator sin()
@@ -121,7 +82,7 @@ namespace sr
                 return UnaryOperator{"sin",
                                      [] (auto const& x) {return x.sin();},
                                      [] (auto const& x) {return x.sin();},
-                                     [] (auto const& x) {return GiNaC::sin(x);}};
+                                     [] (auto const& x) {return sym::sin(x);}};
             }
 
             static UnaryOperator tan()
@@ -129,7 +90,7 @@ namespace sr
                 return UnaryOperator{"tan",
                                      [] (auto const& x) {return x.tan();},
                                      [] (auto const& x) {return x.tan();},
-                                     [] (auto const& x) {return GiNaC::tan(x);}};
+                                     [] (auto const& x) {return sym::tan(x);}};
             }
 
             static UnaryOperator acos()
@@ -137,7 +98,7 @@ namespace sr
                 return UnaryOperator{"acos",
                                      [] (auto const& x) {return x.acos();},
                                      [] (auto const& x) {return x.acos();},
-                                     [] (auto const& x) {return GiNaC::acos(x);}};
+                                     [] (auto const& x) {return sym::acos(x);}};
             }
 
             static UnaryOperator asin()
@@ -145,7 +106,7 @@ namespace sr
                 return UnaryOperator{"asin",
                                      [] (auto const& x) {return x.asin();},
                                      [] (auto const& x) {return x.asin();},
-                                     [] (auto const& x) {return GiNaC::asin(x);}};
+                                     [] (auto const& x) {return sym::asin(x);}};
             }
 
             static UnaryOperator atan()
@@ -153,7 +114,7 @@ namespace sr
                 return UnaryOperator{"atan",
                                      [] (auto const& x) {return x.atan();},
                                      [] (auto const& x) {return x.atan();},
-                                     [] (auto const& x) {return GiNaC::atan(x);}};
+                                     [] (auto const& x) {return sym::atan(x);}};
             }
 
             static UnaryOperator cosh()
@@ -161,7 +122,7 @@ namespace sr
                 return UnaryOperator{"cosh",
                                      [] (auto const& x) {return x.cosh();},
                                      [] (auto const& x) {return x.cosh();},
-                                     [] (auto const& x) {return GiNaC::cosh(x);}};
+                                     [] (auto const& x) {return sym::cosh(x);}};
             }
 
             static UnaryOperator sinh()
@@ -169,7 +130,7 @@ namespace sr
                 return UnaryOperator{"sinh",
                                      [] (auto const& x) {return x.sinh();},
                                      [] (auto const& x) {return x.sinh();},
-                                     [] (auto const& x) {return GiNaC::sinh(x);}};
+                                     [] (auto const& x) {return sym::sinh(x);}};
             }
 
             static UnaryOperator tanh()
@@ -177,7 +138,7 @@ namespace sr
                 return UnaryOperator{"tanh",
                                      [] (auto const& x) {return x.tanh();},
                                      [] (auto const& x) {return x.tanh();},
-                                     [] (auto const& x) {return GiNaC::tanh(x);}};
+                                     [] (auto const& x) {return sym::tanh(x);}};
             }
 
             static UnaryOperator acosh()
@@ -185,7 +146,7 @@ namespace sr
                 return UnaryOperator{"acosh",
                                      [] (auto const& x) {return x.acosh();},
                                      [] (auto const& x) {return x.acosh();},
-                                     [] (auto const& x) {return GiNaC::acosh(x);}};
+                                     [] (auto const& x) {return sym::acosh(x);}};
             }
 
             static UnaryOperator asinh()
@@ -193,7 +154,7 @@ namespace sr
                 return UnaryOperator{"asinh",
                                      [] (auto const& x) {return x.asinh();},
                                      [] (auto const& x) {return x.asinh();},
-                                     [] (auto const& x) {return GiNaC::asinh(x);}};
+                                     [] (auto const& x) {return sym::asinh(x);}};
             }
 
             static UnaryOperator atanh()
@@ -201,7 +162,7 @@ namespace sr
                 return UnaryOperator{"atanh",
                                      [] (auto const& x) {return x.atanh();},
                                      [] (auto const& x) {return x.atanh();},
-                                     [] (auto const& x) {return GiNaC::atanh(x);}};
+                                     [] (auto const& x) {return sym::atanh(x);}};
             }
 
             static UnaryOperator sqrt()
@@ -209,7 +170,7 @@ namespace sr
                 return UnaryOperator{"sqrt",
                                      [] (auto const& x) {return x.sqrt();},
                                      [] (auto const& x) {return x.sqrt();},
-                                     [] (auto const& x) {return GiNaC::sqrt(x);}};
+                                     [] (auto const& x) {return sym::sqrt(x);}};
             }
 
             static UnaryOperator floor()
@@ -217,7 +178,7 @@ namespace sr
                 return UnaryOperator{"floor",
                                      [] (auto const& x) {return x.floor();},
                                      [] (auto const& x) {return x.floor();},
-                                     [] (auto const& x) {return GiNaC::floor(x);}};
+                                     [] (auto const& x) {return sym::floor(x);}};
             }
 
             static UnaryOperator ceil()
@@ -225,7 +186,7 @@ namespace sr
                 return UnaryOperator{"ceil",
                                      [] (auto const& x) {return x.ceil();},
                                      [] (auto const& x) {return x.ceil();},
-                                     [] (auto const& x) {return GiNaC::ceil(x);}};
+                                     [] (auto const& x) {return sym::ceil(x);}};
             }
 
             static UnaryOperator abs()
@@ -233,7 +194,7 @@ namespace sr
                 return UnaryOperator{"abs",
                                      [] (auto const& x) {return x.abs();},
                                      [] (auto const& x) {return x.abs();},
-                                     [] (auto const& x) {return GiNaC::abs(x);}};
+                                     [] (auto const& x) {return sym::abs(x);}};
             }
 
             static UnaryOperator inverse()
@@ -241,9 +202,9 @@ namespace sr
                 return UnaryOperator{"inverse",
                                      [] (auto const& x) {return x.inverse();},
                                      [] (auto const& x) {return x.inverse();},
-                                     [] (auto const& x) {return GiNaC::inverse(x);}};
+                                     [] (auto const& x) {return sym::inverse(x);}};
             }
-            
+
             bool operator==(UnaryOperator<T> const& other) const
             {
                 return name_ == other.name_;
@@ -253,8 +214,8 @@ namespace sr
             std::string name_;
             std::function<Eigen::Array<T, Eigen::Dynamic, 1>(Eigen::Array<T, Eigen::Dynamic, 1>)> op_;
             std::function<Eigen::Array<ceres::Jet<T, 4>, Eigen::Dynamic, 1>(Eigen::Array<ceres::Jet<T, 4>, Eigen::Dynamic, 1>)> jetOp_;
-            std::function<GiNaC::ex(GiNaC::ex const&)> ginacOp_;
+            std::function<sym::Expression<T>(sym::Expression<T> const&)> symOp_;
     };
 }
 
-#endif // UNARYOPERATOR_H
+#endif // SYMREG_UNARYOPERATOR_H
