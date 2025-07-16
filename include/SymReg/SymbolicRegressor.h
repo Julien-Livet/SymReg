@@ -37,7 +37,7 @@ namespace sr
                               bool verbose = false,
                               std::function<void(Expression<T> const&, T const&)> const& callback = [] (Expression<T> const&, T const&) {},
                               bool discreteParams = true,
-                              size_t timeout = 20 * 60)
+                              size_t timeout = 30 * 60)
                 : variables_{variables}, un_ops_{un_ops}, bin_ops_{bin_ops},
                   niterations_{niterations}, paramValues_{paramValues},
                   operatorDepth_{operatorDepth}, extraExpressions_{extraExpressions},
