@@ -46,7 +46,7 @@ make -j$(nproc)
 sudo make install
 cd ../../SymReg
 mkdir build && cd build
-cmake ..
+cmake -DNOISE_PERCENTAGE=0.0 ..
 make -j$(nproc)
 sudo make install
 ./primes_demo

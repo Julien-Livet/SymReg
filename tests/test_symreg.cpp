@@ -9,11 +9,23 @@
 
 #include "SymReg/SymbolicRegressor.h"
 
+#include "config.h"
+
 //https://github.com/lacava/ode-strogatz
 
 //Commented tests need some work
 
 using namespace sr;
+
+std::pair<double, double> eps()
+{
+    if (!noisePercentage)
+        return std::make_pair(1e-4, 1e-12);
+    else if (noisePercentage < 0.2)
+        return std::make_pair(1e-2, 1e-4);
+    else
+        return std::make_pair(1e-1, 1e-2);
+}
 
 size_t writeCallback(void* contents, size_t size, size_t nmemb, void* userp)
 {
@@ -97,6 +109,18 @@ StrotagtzData downloadUrlData(std::string const& url)
     return data;
 }
 
+Eigen::ArrayXd noiseData(Eigen::ArrayXd const& y, double percentage)
+{
+    assert(0.0 <= percentage && percentage <= 100.0);
+    
+    auto const ratio{percentage / 100.0};
+
+    Eigen::ArrayXd z{y};
+    z.setRandom();
+
+    return y + ratio * z * y;
+}
+
 double bestLoss = std::numeric_limits<double>::infinity();
 
 void callback(Expression<double> const& e, double const& loss)
@@ -155,13 +179,16 @@ TEST(TestSymReg, 5x1Add7x2Addx3Add8)
                          paramsValue,
                          operatorDepth,
                          extraExpressions};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -177,15 +204,18 @@ TEST(TestSymReg, LinearFit)
     using Var = Variable<double>;
 
     SymbolicRegressor sr{std::vector<Var>{Var("x", x)}};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto const y(2 * x + 3);
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -212,15 +242,18 @@ TEST(TestSymReg, LogFit)
                          std::vector<BinOp>{},
                          1,
                          paramsValue};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto const y(2 * Eigen::log(3 * x + 4) + 5);
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -248,13 +281,16 @@ TEST(TestSymReg, Test1)
                          std::vector<UnOp>{},
                          std::vector<BinOp>{BinOp::times()},
                          3};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -296,13 +332,16 @@ TEST(TestSymReg, Test2)
                          paramsValue,
                          std::map<std::string, size_t>{},
                          extraExpressions};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -342,13 +381,16 @@ TEST(TestSymReg, Test3)
                          paramsValue,
                          operatorDepth,
                          extraExpressions};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -377,13 +419,16 @@ TEST(TestSymReg, Test4)
                          std::vector<UnOp>{},
                          std::vector<BinOp>{BinOp::times(), BinOp::plus()},
                          3};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto const p{sr.fit(z)};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -413,13 +458,16 @@ TEST(TestSymReg, Test5)
                          std::vector<BinOp>{BinOp::plus()},
                          2,
                          paramsValue};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -448,13 +496,16 @@ TEST(TestSymReg, Test6)
                          std::vector<BinOp>{BinOp::times()},
                          3,
                          paramsValue};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -500,13 +551,16 @@ TEST(TestSymReg, PySR)
                          paramsValue,
                          operatorDepth,
                          extraExpressions};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -540,13 +594,16 @@ TEST(TestSymReg, GPLearn)
                          paramsValue,
                          operatorDepth,
                          extraExpressions};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -588,6 +645,9 @@ TEST(TestSymReg, Line)
                          paramsValue,
                          operatorDepth,
                          extraExpressions};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto zero{x};
     zero *= 0;
@@ -597,7 +657,7 @@ TEST(TestSymReg, Line)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -637,6 +697,9 @@ TEST(TestSymReg, Circle)
                          paramsValue,
                          operatorDepth,
                          extraExpressions};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto zero{x};
     zero *= 0;
@@ -646,7 +709,7 @@ TEST(TestSymReg, Circle)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -696,6 +759,9 @@ TEST(TestSymReg, Plane)
                          paramsValue,
                          operatorDepth,
                          extraExpressions};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto zero{x};
     zero *= 0;
@@ -705,7 +771,7 @@ TEST(TestSymReg, Plane)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -748,6 +814,9 @@ TEST(TestSymReg, Sphere)
                          paramsValue,
                          operatorDepth,
                          extraExpressions};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto zero{x};
     zero *= 0;
@@ -757,7 +826,7 @@ TEST(TestSymReg, Sphere)
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -784,13 +853,16 @@ TEST(TestSymReg, x1Mulx2)
                          std::vector<UnOp>{},
                          std::vector<BinOp>{BinOp::times()},
                          1};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -821,13 +893,16 @@ TEST(TestSymReg, Nguyen1)
                                             BinOp::plus()},
                          4,
                          paramsValue};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -858,13 +933,16 @@ TEST(TestSymReg, Nguyen2)
                                             BinOp::plus()},
                          4,
                          paramsValue};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -895,13 +973,16 @@ TEST(TestSymReg, Nguyen3)
                                             BinOp::plus()},
                          4,
                          paramsValue};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -932,13 +1013,16 @@ TEST(TestSymReg, Nguyen4)
                                             BinOp::plus()},
                          4,
                          paramsValue};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -981,13 +1065,16 @@ TEST(TestSymReg, Nguyen5)
                          operatorDepth,
                          extraExpressions};
     //sr.exhaustiveLimit = 1e6; //Optimal expression can generate 3^14 combinations
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1027,13 +1114,16 @@ TEST(TestSymReg, Nguyen6)
                          paramsValue,
                          operatorDepth,
                          extraExpressions};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1074,13 +1164,16 @@ TEST(TestSymReg, Nguyen7)
                          paramsValue,
                          operatorDepth,
                          extraExpressions};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1111,13 +1204,16 @@ TEST(TestSymReg, Nguyen8)
                          std::vector<BinOp>{},
                          2,
                          paramsValue};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1160,13 +1256,16 @@ TEST(TestSymReg, Nguyen9)
                          paramsValue,
                          operatorDepth,
                          extraExpressions};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1202,13 +1301,16 @@ TEST(TestSymReg, Nguyen10)
                          2,
                          paramsValue,
                          operatorDepth};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1242,13 +1344,16 @@ TEST(TestSymReg, Keijzer10)
                          std::vector<BinOp>{BinOp::pow()},
                          2,
                          paramsValue};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(y)};
+    auto const p{sr.fit(noiseData(y, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1282,13 +1387,16 @@ TEST(TestSymReg, d_bacres1)
                          paramValues,
                          operatorDepth,
                          extraExpressions};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto const p{sr.fit(data.label)};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1322,13 +1430,16 @@ TEST(TestSymReg, d_bacres2)
                          paramValues,
                          operatorDepth,
                          extraExpressions};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto const p{sr.fit(data.label)};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1352,13 +1463,16 @@ TEST(TestSymReg, d_barmag1)
                          3,
                          paramsValue,
                          operatorDepth};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto const p{sr.fit(data.label)};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1381,13 +1495,16 @@ TEST(TestSymReg, d_barmag2)
                          3,
                          paramsValue,
                          operatorDepth};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto const p{sr.fit(data.label)};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1410,13 +1527,16 @@ TEST(TestSymReg, d_glider1)
                          3,
                          paramsValue,
                          operatorDepth};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto const p{sr.fit(data.label)};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1457,12 +1577,16 @@ TEST(TestSymReg, d_glider2)
                          paramsValue,
                          operatorDepth};
 
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
+
     auto const p{sr.fit(data.label)};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1486,13 +1610,16 @@ TEST(TestSymReg, d_lv1)
                          3,
                          paramsValue,
                          operatorDepth};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto const p{sr.fit(data.label)};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1516,13 +1643,16 @@ TEST(TestSymReg, d_lv2)
                          3,
                          paramsValue,
                          operatorDepth};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto const p{sr.fit(data.label)};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1547,13 +1677,16 @@ TEST(TestSymReg, d_predprey1)
                          3,
                          paramsValue,
                          operatorDepth};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto const p{sr.fit(data.label)};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1578,13 +1711,16 @@ TEST(TestSymReg, d_predprey2)
                          3,
                          paramsValue,
                          operatorDepth};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto const p{sr.fit(data.label)};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1609,13 +1745,16 @@ TEST(TestSymReg, d_shearflow1)
                          3,
                          paramsValue,
                          operatorDepth};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto const p{sr.fit(data.label)};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1659,12 +1798,16 @@ TEST(TestSymReg, d_shearflow2)
                          paramsValue,
                          operatorDepth};
 
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
+
     auto const p{sr.fit(data.label)};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1688,13 +1831,16 @@ TEST(TestSymReg, d_vdp1)
                          3,
                          paramsValue,
                          operatorDepth};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto const p{sr.fit(data.label)};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }
@@ -1718,13 +1864,16 @@ TEST(TestSymReg, d_vdp2)
                          3,
                          paramsValue,
                          operatorDepth};
+    auto const epsilon{eps()};
+    sr.eps = epsilon.first;
+    sr.epsLoss = epsilon.second;
 
     auto const p{sr.fit(data.label)};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
     std::cout << p.second.optStr() << std::endl;
-    std::cout << p.second.sympyStr() << std::endl;
+    std::cout << p.second.sympyStr(sr.eps) << std::endl;
 
     EXPECT_TRUE(p.first < sr.epsLoss);
 }

@@ -39,7 +39,7 @@ jobs:
     - name: Build project
       run: |
         cd build
-        cmake ..
+        cmake -DNOISE_PERCENTAGE=0.0 ..
         make -j$(nproc)
         sudo make install
 
