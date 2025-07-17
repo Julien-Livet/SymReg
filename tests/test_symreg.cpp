@@ -1391,7 +1391,7 @@ TEST(TestSymReg, d_bacres1)
     sr.eps = epsilon.first;
     sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(data.label)};
+    auto const p{sr.fit(noiseData(data.label, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
@@ -1434,7 +1434,7 @@ TEST(TestSymReg, d_bacres2)
     sr.eps = epsilon.first;
     sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(data.label)};
+    auto const p{sr.fit(noiseData(data.label, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
@@ -1467,7 +1467,7 @@ TEST(TestSymReg, d_barmag1)
     sr.eps = epsilon.first;
     sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(data.label)};
+    auto const p{sr.fit(noiseData(data.label, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
@@ -1499,7 +1499,7 @@ TEST(TestSymReg, d_barmag2)
     sr.eps = epsilon.first;
     sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(data.label)};
+    auto const p{sr.fit(noiseData(data.label, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
@@ -1531,7 +1531,7 @@ TEST(TestSymReg, d_glider1)
     sr.eps = epsilon.first;
     sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(data.label)};
+    auto const p{sr.fit(noiseData(data.label, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
@@ -1581,7 +1581,7 @@ TEST(TestSymReg, d_glider2)
     sr.eps = epsilon.first;
     sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(data.label)};
+    auto const p{sr.fit(noiseData(data.label, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
@@ -1614,7 +1614,7 @@ TEST(TestSymReg, d_lv1)
     sr.eps = epsilon.first;
     sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(data.label)};
+    auto const p{sr.fit(noiseData(data.label, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
@@ -1647,7 +1647,7 @@ TEST(TestSymReg, d_lv2)
     sr.eps = epsilon.first;
     sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(data.label)};
+    auto const p{sr.fit(noiseData(data.label, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
@@ -1681,7 +1681,7 @@ TEST(TestSymReg, d_predprey1)
     sr.eps = epsilon.first;
     sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(data.label)};
+    auto const p{sr.fit(noiseData(data.label, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
@@ -1715,7 +1715,7 @@ TEST(TestSymReg, d_predprey2)
     sr.eps = epsilon.first;
     sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(data.label)};
+    auto const p{sr.fit(noiseData(data.label, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
@@ -1749,7 +1749,7 @@ TEST(TestSymReg, d_shearflow1)
     sr.eps = epsilon.first;
     sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(data.label)};
+    auto const p{sr.fit(noiseData(data.label, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
@@ -1802,7 +1802,7 @@ TEST(TestSymReg, d_shearflow2)
     sr.eps = epsilon.first;
     sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(data.label)};
+    auto const p{sr.fit(noiseData(data.label, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
@@ -1835,7 +1835,7 @@ TEST(TestSymReg, d_vdp1)
     sr.eps = epsilon.first;
     sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(data.label)};
+    auto const p{sr.fit(noiseData(data.label, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
@@ -1868,7 +1868,7 @@ TEST(TestSymReg, d_vdp2)
     sr.eps = epsilon.first;
     sr.epsLoss = epsilon.second;
 
-    auto const p{sr.fit(data.label)};
+    auto const p{sr.fit(noiseData(data.label, noisePercentage))};
 
     std::cout << p.first << std::endl;
     std::cout << expr(p.second.str()) << std::endl;
