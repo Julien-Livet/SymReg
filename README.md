@@ -58,41 +58,41 @@ time ./test_symreg --gtest_filter=TestSymReg.Line
 # Benchmark with 0% of noise
 |Test name|MSE|Expression time|Test time|Input symbolic expression|Found symbolic expression|
 |-|-|-|-|-|-|
-|5x1Add7x2Addx3Add8|7.02683e-14|1ms|2ms|`5.2*x1+7.3*x2+x3+8.6`|`5.2*x1 + 7.3*x2 + x3 + 8.6`|
-|LinearFit|4.92563e-16|0ms|0ms|`2*x+3`|`2.0*x + 3.0`|
+|5x1Add7x2Addx3Add8|8.38789e-14|4ms|5ms|`5.2*x1+7.3*x2+x3+8.6`|`5.2*x1 + 7.3*x2 + x3 + 8.6`|
+|LinearFit|3.44176e-16|0ms|0ms|`2*x+3`|`2.0*x + 3.0`|
 |LogFit|0|1ms|1ms|`2*log(3*x+4)+5`|`2.0*log(3.0*x + 4.0) + 5.0`|
-|Test1|1.44897e-17|0ms|0ms|`x**2+x+1`|`x + x**2.0 + 1.0`|
-|Test2|1.24178e-24|17ms|18ms|`exp(x)*sin(x)`|`exp(x)*sin(x)`|
-|Test3|4.62223e-32|2ms|3ms|`x / (1 + x**2)`|`x/(x**2.0 + 1.0)**1.0`|
-|Test4|5.372e-22|2ms|4ms|`x**2+y**2`|`x**2.0 + y**2.0`|
-|Test5|3.8457e-30|23ms|26ms|`log(x)+sin(x)`|`log(x) + sin(x)`|
-|Test6|7.79837e-32|1200ms|1200ms|`exp(-0.5*x**2)/sqrt(2*pi)`|`0.4*exp(-0.5*x**2.0)`|
-|PySR|1.92875e-20|1112ms|1362ms|`2.5382*cos(x3)+x0**2-0.5`|`x0**2.0 + 2.5*cos(x3) - 0.5`|
-|GPLearn|1.01919e-21|4ms|6ms|`x0**2-x1**2+x1-1`|`x0**2.0 + x1 - 1.0*x1**2.0 - 1.0`|
+|Test1|4.03717e-15|0ms|0ms|`x**2+x+1`|`x + x**2.0 + 1.0`|
+|Test2|4.1359e-24|19ms|19ms|`exp(x)*sin(x)`|`exp(x)*sin(x)`|
+|Test3|2.15704e-32|2ms|2ms|`x / (1 + x**2)`|`x/(x**2.0 + 1.0)**1.0`|
+|Test4|7.25338e-22|2ms|4ms|`x**2+y**2`|`x**2.0 + y**2.0`|
+|Test5|3.35266e-30|21ms|23ms|`log(x)+sin(x)`|`log(x) + sin(x)`|
+|Test6|4.84764e-32|991ms|992ms|`exp(-0.5*x**2)/sqrt(2*pi)`|`0.4*exp(-0.5*x**2.0)`|
+|PySR|1.21677e-22|1196ms|1438ms|`2.5382*cos(x3)+x0**2-0.5`|`x0**2.0 + 2.5*cos(x3) - 0.5`|
+|GPLearn|1.02851e-21|3ms|6ms|`x0**2-x1**2+x1-1`|`x0**2.0 + x1 - 1.0*x1**2.0 - 1.0`|
 |x1Mulx2|1.1832e-15|0ms|0ms|`x1*x2`|`x1*x2`|
-|Nguyen1|1.2691e-20|1ms|1ms|`x+x**2+x**3`|`1.0*x + 1.0*x**2.0 + 1.0*x**3.0`|
-|Nguyen2|2.25567e-20|1ms|1ms|`x+x**2+x**3+x**4`|`1.0*x + 1.0*x**2.0 + 1.0*x**3.0 + 1.0*x**4.0`|
-|Nguyen3|3.02393e-21|27ms|41ms|`x+x**2+x**3+x**4+x**5`|`1.0*x + 1.0*x**2.0 + 1.0*x**3.0 + 1.0*x**4.0 + 1.0*x**5.0`|
-|Nguyen4|7.38244e-23|60ms|72ms|`x+x**2+x**3+x**4+x**5+x**6`|`1.0*x + 1.0*x**2.0 + 1.0*x**3.0 + 1.0*x**4.0 + 1.0*x**5.0 + 1.0*x**6.0`|
-|Nguyen5|1.35585e-31|1134ms|1143ms|`sin(x**2)*cos(x)-1`|`sin(x**2.0)*cos(x) - 1.0`|
-|Nguyen6|2.41126e-31|37ms|40ms|`sin(x)+sin(x+x**2)`|`sin(x) + sin(x + x**2.0)`|
-|Nguyen7|8.75913e-31|252ms|255ms|`log(x+1)+log(x**2+1)`|`log(x + 1.0) + log(x**2.0 + 1.0)`|
+|Nguyen1|3.28779e-20|1ms|2ms|`x+x**2+x**3`|`1.0*x + 1.0*x**2.0 + 1.0*x**3.0`|
+|Nguyen2|4.19683e-20|0ms|1ms|`x+x**2+x**3+x**4`|`1.0*x + 1.0*x**2.0 + 1.0*x**3.0 + 1.0*x**4.0`|
+|Nguyen3|2.4968e-20|24ms|50ms|`x+x**2+x**3+x**4+x**5`|`1.0*x + 1.0*x**2.0 + 1.0*x**3.0 + 1.0*x**4.0 + 1.0*x**5.0`|
+|Nguyen4|1.24337e-22|92ms|115ms|`x+x**2+x**3+x**4+x**5+x**6`|`1.0*x + 1.0*x**2.0 + 1.0*x**3.0 + 1.0*x**4.0 + 1.0*x**5.0 + 1.0*x**6.0`|
+|Nguyen5|1.97215e-31|891ms|898ms|`sin(x**2)*cos(x)-1`|`sin(x**2.0)*cos(x) - 1.0`|
+|Nguyen6|1.10934e-31|56ms|60ms|`sin(x)+sin(x+x**2)`|`sin(x) + sin(x + x**2.0)`|
+|Nguyen7|1.50377e-30|246ms|250ms|`log(x+1)+log(x**2+1)`|`log(x + 1.0) + log(x**2.0 + 1.0)`|
 |Nguyen8|0|0ms|0ms|`sqrt(x)`|`x**0.5`|
-|Nguyen9|0.384351|134ms|263ms|`sin(x1)+sin(x2**2)`|`x1 + sin(x2**2.0)`|
-|Nguyen10|0|10ms|11ms|`2*sin(x1)*cos(x2)`|`2.0*sin(x1)*cos(x2)`|
-|Keijzer10|0|3ms|3ms|`x1**x2`|`x1**x2`|
-|d_bacres1|8.92493e-20|0ms|83ms|`20-x-(x*y/(1+0.5*x**2))`|`-1.7*x*y/(0.8*x**2.0 + 1.7)**1.0 - 1.0*x + 20.0`|
-|d_bacres2|4.34292e-21|684ms|839ms|`10-(x*y/(1+0.5*x**2))`|`10.0 - 298.6/(208.0*x**2.0/(x*y)**1.0 + 416.0/(x*y)**1.0)**1.0`|
-|d_barmag1|1.42591e-27|4139ms|4239ms|`0.5*sin(x-y)-sin(x)`|`-1.0*sin(x) + 0.5*sin(x - 1.0*y)`|
-|d_barmag2|7.61955e-28|5174ms|5274ms|`0.5*sin(y-x)-sin(y)`|`-1.0*sin(y) - 0.5*sin(x - 1.0*y)`|
-|d_glider1|1.07305e-25|16858ms|17156ms|`-0.05*x**2-sin(y)`|`-1.0*sin(y)`|
-|d_glider2|1.5599e-15|12ms|252ms|`x-cy/x`|`(-1.0*cy + x**2.0)/x**1.0`|
-|d_lv1|7.55206e-27|34ms|292ms|`3*x-2*x*y-x**2`|`-2.0*x*y + 3.0*x - 1.0*x**2.0`|
-|d_lv2|8.13647e-27|39ms|333ms|`2*y-x*y-y**2`|`-1.0*x*y + 2.0*y - 1.0*y**2.0`|
-|d_shearflow1|4.12295e-27|31ms|317ms|`cos(x)*cot(y)`|`cos(x)*cot(y)`|
-|d_shearflow2|6.10506e-19|366ms|612ms|`(cy**2+0.1*sy**2)*sx`|`sx*(1.0*cy**2.0 + 0.1*sy**2.0)`|
-|d_vdp1|2.31375e-13|32ms|128ms|`10*(y-(1/3*(x**3-x)))`|`3.3*x - 3.3*x**3.0 + 10.0*y`|
-|d_vdp2|4.09897e-25|0ms|77ms|`-0.1*x`|`-0.1*x`|
+|Nguyen9|0|255ms|267ms|`sin(x1)+sin(x2**2)`|`sin(x1) + sin(x2**2.0)`|
+|Nguyen10|0|9ms|11ms|`2*sin(x1)*cos(x2)`|`2.0*sin(x1)*cos(x2)`|
+|Keijzer10|0|2ms|3ms|`x1**x2`|`x1**x2`|
+|d_bacres1|8.92493e-20|0ms|541ms|`20-x-(x*y/(1+0.5*x**2))`|`-1.7*x*y/(0.8*x**2.0 + 1.7)**1.0 - 1.0*x + 20.0`|
+|d_bacres2|4.34292e-21|639ms|1059ms|`10-(x*y/(1+0.5*x**2))`|`10.0 - 298.6/(208.0*x**2.0/(x*y)**1.0 + 416.0/(x*y)**1.0)**1.0`|
+|d_barmag1|1.42591e-27|4031ms|4409ms|`0.5*sin(x-y)-sin(x)`|`-1.0*sin(x) + 0.5*sin(x - 1.0*y)`|
+|d_barmag2|7.61955e-28|4441ms|4805ms|`0.5*sin(y-x)-sin(y)`|`-1.0*sin(y) - 0.5*sin(x - 1.0*y)`|
+|d_glider1|1.07305e-25|16170ms|16475ms|`-0.05*x**2-sin(y)`|`-1.0*sin(y)`|
+|d_glider2|1.5599e-15|11ms|347ms|`x-cy/x`|`(-1.0*cy + x**2.0)/x**1.0`|
+|d_lv1|7.55206e-27|10ms|269ms|`3*x-2*x*y-x**2`|`-2.0*x*y + 3.0*x - 1.0*x**2.0`|
+|d_lv2|8.13647e-27|48ms|364ms|`2*y-x*y-y**2`|`-1.0*x*y + 2.0*y - 1.0*y**2.0`|
+|d_shearflow1|4.12295e-27|21ms|296ms|`cos(x)*cot(y)`|`cos(x)*cot(y)`|
+|d_shearflow2|6.10506e-19|359ms|844ms|`(cy**2+0.1*sy**2)*sx`|`sx*(1.0*cy**2.0 + 0.1*sy**2.0)`|
+|d_vdp1|2.31375e-13|58ms|335ms|`10*(y-(1/3*(x**3-x)))`|`3.3*x - 3.3*x**3.0 + 10.0*y`|
+|d_vdp2|4.09897e-25|0ms|637ms|`-0.1*x`|`-0.1*x`|
 
 # Benchmark with 0.1% of noise
 |Test name|MSE|Expression time|Test time|Input symbolic expression|Found symbolic expression|

@@ -880,7 +880,7 @@ BenchmarkResult test_Nguyen9(double noisePercentage)
                          paramsValue,
                          operatorDepth,
                          extraExpressions};
-    sr.keepBestLimit = 100;
+    sr.keepBestLimit = 1000;
 
     return BenchmarkResult{"Nguyen9",
                            "sin(x1)+sin(x2**2)",
