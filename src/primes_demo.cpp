@@ -146,15 +146,16 @@ class DynamicChart : public QObject
         }
 
     public slots:
-        void callback(Expression<double> const& e, double const& loss)
+        void callback(SymbolicRegressor<double>::Result const& result)
         {
-            if (loss < bestLoss)
+            if (result.loss < bestLoss)
             {
-                bestLoss = loss;
+                bestLoss = result.loss;
+                auto const& e{result.expression};
 
                 auto const str{e.sympyStr()};
 
-                std::cout << loss << " " << str << std::endl;
+                std::cout << result.loss << " " << str << std::endl;
 
                 auto const y{e.eval()};
 
@@ -170,7 +171,7 @@ class DynamicChart : public QObject
                                  chartView, &ChartWithTooltip::showPointTooltip);
 
                 auto dot{QString::fromStdString(e.dot())};
-                dot.insert(dot.indexOf("Symbolic expression"), "Loss: " + QString::number(loss) + "\n");
+                dot.insert(dot.indexOf("Symbolic expression"), "Loss: " + QString::number(result.loss) + "\n");
                 auto const svgData = generateGraphvizSvg(dot);
 
                 if (!svgData.isNull())
@@ -255,9 +256,9 @@ class DynamicChart : public QObject
                                                                  operatorDepth,
                                                                  std::vector<Expression<double> >{},
                                                                  false,
-                                                                 [this] (Expression<double> const& e, double const& loss)
+                                                                 [this] (SymbolicRegressor<double>::Result const& result)
                                                                  {
-                                                                     QMetaObject::invokeMethod(this, [this, e, loss] () { this->callback(e, loss); }, Qt::QueuedConnection);
+                                                                     QMetaObject::invokeMethod(this, [this, result] () { this->callback(result); }, Qt::QueuedConnection);
                                                                  },
                                                                  true/*false*/);
 

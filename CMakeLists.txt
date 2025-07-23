@@ -4,10 +4,6 @@ project(SymReg)
 set(CMAKE_BUILD_TYPE Release)
 #set(CMAKE_BUILD_TYPE Debug)
 
-set(NOISE_PERCENTAGE 0.0 CACHE STRING "Noise percentage")
-
-configure_file(cmake/config.h.in config.h @ONLY)
-
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   add_compile_options(
     -march=native
@@ -47,13 +43,18 @@ target_link_libraries(primes_demo
   pybind11::embed Python3::Python
   Ceres::ceres Qt5::Widgets Qt5::Charts armadillo Qt5::Svg Qt5::WebEngineWidgets gvc cgraph)
 
+add_executable(benchmark src/benchmark.cpp)
+target_link_libraries(benchmark
+#  asan ubsan
+  pybind11::embed Python3::Python
+  Ceres::ceres CURL::libcurl armadillo)
+
 enable_testing()
 add_executable(test_symreg tests/test_symreg.cpp)
 target_link_libraries(test_symreg
 #  asan ubsan
   pybind11::embed Python3::Python
   Ceres::ceres CURL::libcurl gtest gtest_main armadillo)
-target_include_directories(test_symreg PRIVATE ${CMAKE_BINARY_DIR})
 
 math(EXPR TIMEOUT "3 * 60 * 60")
 add_test(NAME TestSymReg COMMAND test_symreg)

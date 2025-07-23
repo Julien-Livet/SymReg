@@ -1,5 +1,3 @@
-#include <gtest/gtest.h>
-
 #include <cmath>
 #include <iostream>
 
@@ -9,11 +7,16 @@
 
 #include "SymReg/SymbolicRegressor.h"
 
-//https://github.com/lacava/ode-strogatz
-
-//Commented tests need some work
-
 using namespace sr;
+
+using Result = sr::SymbolicRegressor<double>::Result;
+
+struct BenchmarkResult
+{
+    std::string name;
+    std::string expression;
+    Result result;
+};
 
 size_t writeCallback(void* contents, size_t size, size_t nmemb, void* userp)
 {
@@ -97,6 +100,18 @@ StrotagtzData downloadUrlData(std::string const& url)
     return data;
 }
 
+Eigen::ArrayXd noiseData(Eigen::ArrayXd const& y, double percentage)
+{
+    assert(0.0 <= percentage && percentage <= 100.0);
+    
+    auto const ratio{percentage / 100.0};
+
+    Eigen::ArrayXd z{y};
+    z.setRandom();
+
+    return y + ratio * z * y;
+}
+
 double bestLoss = std::numeric_limits<double>::infinity();
 
 void callback(SymbolicRegressor<double>::Result const& result)
@@ -109,7 +124,7 @@ void callback(SymbolicRegressor<double>::Result const& result)
     }
 }
 
-TEST(TestSymReg, 5x1Add7x2Addx3Add8)
+BenchmarkResult test_5x1Add7x2Addx3Add8(double noisePercentage)
 {
     //srand(0);
     srand(time(0));
@@ -118,10 +133,13 @@ TEST(TestSymReg, 5x1Add7x2Addx3Add8)
 
     Eigen::ArrayXd x1(n);
     x1.setRandom();
+    x1 = noiseData(x1, noisePercentage);
     Eigen::ArrayXd x2(n);
     x2.setRandom();
+    x2 = noiseData(x2, noisePercentage);
     Eigen::ArrayXd x3(n);
     x3.setRandom();
+    x3 = noiseData(x3, noisePercentage);
 
     auto const y{5.2 * x1 + 7.3 * x2 + x3 + 8.6};
 
@@ -156,23 +174,19 @@ TEST(TestSymReg, 5x1Add7x2Addx3Add8)
                          operatorDepth,
                          extraExpressions};
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"5x1Add7x2Addx3Add8",
+                           "5.2*x1+7.3*x2+x3+8.6",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, LinearFit)
+BenchmarkResult test_LinearFit(double noisePercentage)
 {
     //srand(0);
     srand(time(0));
 
     Eigen::ArrayXd x(7);
     x.setRandom();
+    x = noiseData(x, noisePercentage);
 
     using Var = Variable<double>;
 
@@ -180,23 +194,19 @@ TEST(TestSymReg, LinearFit)
 
     auto const y(2 * x + 3);
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"LinearFit",
+                           "2*x+3",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, LogFit)
+BenchmarkResult test_LogFit(double noisePercentage)
 {
     //srand(0);
     srand(time(0));
 
     Eigen::ArrayXd x(100);
     x.setRandom();
+    x = noiseData(x, noisePercentage);
 
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
@@ -215,20 +225,13 @@ TEST(TestSymReg, LogFit)
 
     auto const y(2 * Eigen::log(3 * x + 4) + 5);
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"LogFit",
+                           "2*log(3*x+4)+5",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, Test1)
+BenchmarkResult test_Test1(double noisePercentage)
 {
-    //x**2+x+1
-
     //srand(0);
     srand(time(0));
 
@@ -237,6 +240,7 @@ TEST(TestSymReg, Test1)
     Eigen::ArrayXd x(n);
     x.setRandom();
     x *= 10;
+    x = noiseData(x, noisePercentage);
 
     auto const y{x.pow(2) + x + 1};
 
@@ -249,17 +253,12 @@ TEST(TestSymReg, Test1)
                          std::vector<BinOp>{BinOp::times()},
                          3};
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"Test1",
+                           "x**2+x+1",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, Test2)
+BenchmarkResult test_Test2(double noisePercentage)
 {
     //srand(0);
     srand(time(0));
@@ -269,6 +268,7 @@ TEST(TestSymReg, Test2)
     Eigen::ArrayXd x(n);
     x.setRandom();
     x *= 10;
+    x = noiseData(x, noisePercentage);
 
     auto const y{Eigen::sin(x) * Eigen::exp(x)};
 
@@ -297,17 +297,12 @@ TEST(TestSymReg, Test2)
                          std::map<std::string, size_t>{},
                          extraExpressions};
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"Test2",
+                           "exp(x)*sin(x)",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, Test3)
+BenchmarkResult test_Test3(double noisePercentage)
 {
     //srand(0);
     srand(time(0));
@@ -317,6 +312,7 @@ TEST(TestSymReg, Test3)
     Eigen::ArrayXd x(n);
     x.setRandom();
     x *= 10;
+    x = noiseData(x, noisePercentage);
 
     auto const y{x / (1 + x * x)};
 
@@ -343,17 +339,12 @@ TEST(TestSymReg, Test3)
                          operatorDepth,
                          extraExpressions};
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"Test3",
+                           "x / (1 + x**2)",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, Test4)
+BenchmarkResult test_Test4(double noisePercentage)
 {
     //x**2+y**2
 
@@ -364,8 +355,10 @@ TEST(TestSymReg, Test4)
 
     Eigen::ArrayXd x(n);
     x.setRandom();
+    x = noiseData(x, noisePercentage);
     Eigen::ArrayXd y(n);
     y.setRandom();
+    y = noiseData(y, noisePercentage);
 
     auto const z{x.pow(2) + y.pow(2)};
 
@@ -378,17 +371,12 @@ TEST(TestSymReg, Test4)
                          std::vector<BinOp>{BinOp::times(), BinOp::plus()},
                          3};
 
-    auto const r{sr.fit(z)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"Test4",
+                           "x**2+y**2",
+                           sr.fit(noiseData(z, noisePercentage))};
 }
 
-TEST(TestSymReg, Test5)
+BenchmarkResult test_Test5(double noisePercentage)
 {
     //srand(0);
     srand(time(0));
@@ -399,6 +387,7 @@ TEST(TestSymReg, Test5)
     x.setRandom();
     x *= 10;
     x += 11;
+    x = noiseData(x, noisePercentage);
 
     auto const y{Eigen::log(x) + Eigen::sin(x)};
 
@@ -413,18 +402,14 @@ TEST(TestSymReg, Test5)
                          std::vector<BinOp>{BinOp::plus()},
                          2,
                          paramsValue};
+    sr.keepBestLimit = 100;
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"Test5",
+                           "log(x)+sin(x)",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, Test6)
+BenchmarkResult test_Test6(double noisePercentage)
 {
     //srand(0);
     srand(time(0));
@@ -434,6 +419,7 @@ TEST(TestSymReg, Test6)
     Eigen::ArrayXd x(n);
     x.setRandom();
     x *= 10;
+    x = noiseData(x, noisePercentage);
 
     auto const y{Eigen::exp(-x * x / 2) / std::sqrt(2 * M_PI)};
 
@@ -448,18 +434,14 @@ TEST(TestSymReg, Test6)
                          std::vector<BinOp>{BinOp::times()},
                          3,
                          paramsValue};
+    sr.keepBestLimit = 25;
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"Test6",
+                           "exp(-0.5*x**2)/sqrt(2*pi)",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, PySR)
+BenchmarkResult test_PySR(double noisePercentage)
 {
     //srand(0);
     srand(time(0));
@@ -468,14 +450,19 @@ TEST(TestSymReg, PySR)
 
     Eigen::ArrayXd x0(n);
     x0.setRandom();
+    x0 = noiseData(x0, noisePercentage);
     Eigen::ArrayXd x1(n);
     x1.setRandom();
+    x1 = noiseData(x1, noisePercentage);
     Eigen::ArrayXd x2(n);
     x2.setRandom();
+    x2 = noiseData(x2, noisePercentage);
     Eigen::ArrayXd x3(n);
     x3.setRandom();
+    x3 = noiseData(x3, noisePercentage);
     Eigen::ArrayXd x4(n);
     x4.setRandom();
+    x4 = noiseData(x4, noisePercentage);
 
     auto const y{2.5382 * Eigen::cos(x3) + x0 * x0 - 0.5};
 
@@ -501,17 +488,12 @@ TEST(TestSymReg, PySR)
                          operatorDepth,
                          extraExpressions};
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"PySR",
+                           "2.5382*cos(x3)+x0**2-0.5",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, GPLearn)
+BenchmarkResult test_GPLearn(double noisePercentage)
 {
     //srand(0);
     srand(time(0));
@@ -520,8 +502,10 @@ TEST(TestSymReg, GPLearn)
 
     Eigen::ArrayXd x0(n);
     x0.setRandom();
+    x0 = noiseData(x0, noisePercentage);
     Eigen::ArrayXd x1(n);
     x1.setRandom();
+    x1 = noiseData(x1, noisePercentage);
 
     auto const y{x0 * x0 - x1 * x1 + x1 - 1};
 
@@ -541,228 +525,12 @@ TEST(TestSymReg, GPLearn)
                          operatorDepth,
                          extraExpressions};
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"GPLearn",
+                           "x0**2-x1**2+x1-1",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, Line)
-{
-    //srand(0);
-    srand(time(0));
-
-    Eigen::Vector2d u{1, 2};
-    u /= u.norm();
-    Eigen::Vector2d const p0{3, 4};
-
-    size_t constexpr n{10};
-
-    Eigen::ArrayXd x(n);
-    Eigen::ArrayXd y(n);
-
-    for (size_t i{0}; i < n; ++i)
-    {
-        auto const t{10.0 * rand() / RAND_MAX - 5};
-        auto const p{t * u + p0};
-        x[i] = p[0];
-        y[i] = p[1];
-    }
-
-    using Var = Variable<double>;
-    using UnOp = UnaryOperator<double>;
-    using BinOp = BinaryOperator<double>;
-
-    std::vector<double> const paramsValue;
-    std::map<std::string, size_t> operatorDepth;
-    std::vector<Expression<double> > extraExpressions;
-
-    SymbolicRegressor sr{std::vector<Var>{Var("x", x), Var("y", y)},
-                         std::vector<UnOp>{},
-                         std::vector<BinOp>{BinOp::plus()},
-                         3,
-                         paramsValue,
-                         operatorDepth,
-                         extraExpressions};
-
-    auto zero{x};
-    zero *= 0;
-
-    auto const r{sr.fit(zero)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
-}
-
-TEST(TestSymReg, Circle)
-{
-    //srand(0);
-    srand(time(0));
-
-    Eigen::Array2d const p0{1, 2};
-    double const rho{4};
-
-    size_t constexpr n{10};
-
-    Eigen::ArrayXd x(n);
-    Eigen::ArrayXd y(n);
-
-    for (size_t i{0}; i < n; ++i)
-    {
-        auto const theta{2.0 * M_PI * rand() / RAND_MAX};
-        x[i] = p0[0] + rho * std::cos(theta);
-        y[i] = p0[1] + rho * std::sin(theta);
-    }
-
-    using Var = Variable<double>;
-    using UnOp = UnaryOperator<double>;
-    using BinOp = BinaryOperator<double>;
-
-    std::vector<double> const paramsValue;
-    std::map<std::string, size_t> operatorDepth;
-    std::vector<Expression<double> > extraExpressions;
-
-    SymbolicRegressor sr{std::vector<Var>{Var("x", x), Var("y", y)},
-                         std::vector<UnOp>{},
-                         std::vector<BinOp>{BinOp::plus(), BinOp::times()},
-                         3,
-                         paramsValue,
-                         operatorDepth,
-                         extraExpressions};
-
-    auto zero{x};
-    zero *= 0;
-
-    auto const r{sr.fit(zero)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
-}
-
-TEST(TestSymReg, Plane)
-{
-    //srand(0);
-    srand(time(0));
-
-    Eigen::Vector3d n{1, 2, 3};
-    n /= n.norm();
-    Eigen::Vector3d u{-4, 5, 6};
-    u /= u.norm();
-    Eigen::Vector3d v{n.cross(u)};
-    v /= v.norm();
-    u = v.cross(n);
-    Eigen::Vector3d const p0{3, 4, 5};
-
-    size_t constexpr N{10};
-
-    Eigen::ArrayXd x(N);
-    Eigen::ArrayXd y(N);
-    Eigen::ArrayXd z(N);
-
-    for (size_t i{0}; i < N; ++i)
-    {
-        auto const t1{10.0 * rand() / RAND_MAX - 5};
-        auto const t2{10.0 * rand() / RAND_MAX - 5};
-        auto const p{t1 * u + t2 * v + p0};
-        x[i] = p[0];
-        y[i] = p[1];
-        z[i] = p[2];
-    }
-
-    using Var = Variable<double>;
-    using UnOp = UnaryOperator<double>;
-    using BinOp = BinaryOperator<double>;
-
-    std::vector<double> const paramsValue;
-    std::map<std::string, size_t> operatorDepth;
-    std::vector<Expression<double> > extraExpressions;
-
-    SymbolicRegressor sr{std::vector<Var>{Var("x", x), Var("y", y), Var("z", z)},
-                         std::vector<UnOp>{},
-                         std::vector<BinOp>{BinOp::plus()},
-                         3,
-                         paramsValue,
-                         operatorDepth,
-                         extraExpressions};
-
-    auto zero{x};
-    zero *= 0;
-
-    auto const r{sr.fit(zero)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
-}
-
-TEST(TestSymReg, Sphere)
-{
-    //srand(0);
-    srand(time(0));
-
-    Eigen::Array3d const p0{1, 2, 3};
-    double const rho{4};
-
-    size_t constexpr n{10};
-
-    Eigen::ArrayXd x(n);
-    Eigen::ArrayXd y(n);
-    Eigen::ArrayXd z(n);
-
-    for (size_t i{0}; i < n; ++i)
-    {
-        auto const theta{M_PI * rand() / RAND_MAX - M_PI / 2};
-        auto const phi{2.0 * M_PI * rand() / RAND_MAX};
-        x[i] = p0[0] + rho * std::cos(theta) * std::cos(phi);
-        y[i] = p0[1] + rho * std::cos(theta) * std::sin(phi);
-        z[i] = p0[2] + rho * std::sin(theta);
-    }
-
-    using Var = Variable<double>;
-    using UnOp = UnaryOperator<double>;
-    using BinOp = BinaryOperator<double>;
-
-    std::vector<double> const paramsValue;
-    std::map<std::string, size_t> operatorDepth;
-    std::vector<Expression<double> > extraExpressions;
-
-    SymbolicRegressor sr{std::vector<Var>{Var("x", x), Var("y", y), Var("z", z)},
-                         std::vector<UnOp>{},
-                         std::vector<BinOp>{BinOp::plus(), BinOp::times()},
-                         3,
-                         paramsValue,
-                         operatorDepth,
-                         extraExpressions};
-
-    auto zero{x};
-    zero *= 0;
-
-    auto const r{sr.fit(zero)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
-}
-
-TEST(TestSymReg, x1Mulx2)
+BenchmarkResult test_x1Mulx2(double noisePercentage)
 {
     srand(0);
     //srand(time(0));
@@ -771,8 +539,10 @@ TEST(TestSymReg, x1Mulx2)
 
     Eigen::ArrayXd x1(n);
     x1.setRandom();
+    x1 = noiseData(x1, noisePercentage);
     Eigen::ArrayXd x2(n);
     x2.setRandom();
+    x2 = noiseData(x2, noisePercentage);
 
     auto const y{x1 * x2};
 
@@ -785,20 +555,13 @@ TEST(TestSymReg, x1Mulx2)
                          std::vector<BinOp>{BinOp::times()},
                          1};
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"x1Mulx2",
+                           "x1*x2",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, Nguyen1)
+BenchmarkResult test_Nguyen1(double noisePercentage)
 {
-    //f(x) = x**3 + x**2 + x
-
     //srand(0);
     srand(time(0));
 
@@ -806,6 +569,7 @@ TEST(TestSymReg, Nguyen1)
 
     Eigen::ArrayXd x(n);
     x.setRandom();
+    x = noiseData(x, noisePercentage);
 
     auto const y{x.pow(3) + x.pow(2) + x};
 
@@ -822,20 +586,13 @@ TEST(TestSymReg, Nguyen1)
                          4,
                          paramsValue};
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"Nguyen1",
+                           "x+x**2+x**3",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, Nguyen2)
+BenchmarkResult test_Nguyen2(double noisePercentage)
 {
-    //f(x) = x**4 + x**3 + x**2 + x
-
     //srand(0);
     srand(time(0));
 
@@ -843,6 +600,7 @@ TEST(TestSymReg, Nguyen2)
 
     Eigen::ArrayXd x(n);
     x.setRandom();
+    x = noiseData(x, noisePercentage);
 
     auto const y{x.pow(4) + x.pow(3) + x.pow(2) + x};
 
@@ -859,20 +617,13 @@ TEST(TestSymReg, Nguyen2)
                          4,
                          paramsValue};
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"Nguyen2",
+                           "x+x**2+x**3+x**4",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, Nguyen3)
+BenchmarkResult test_Nguyen3(double noisePercentage)
 {
-    //f(x) = x**5 + x**4 + x**3 + x**2 + x
-
     //srand(0);
     srand(time(0));
 
@@ -880,6 +631,7 @@ TEST(TestSymReg, Nguyen3)
 
     Eigen::ArrayXd x(n);
     x.setRandom();
+    x = noiseData(x, noisePercentage);
 
     auto const y{x.pow(5) + x.pow(4) + x.pow(3) + x.pow(2) + x};
 
@@ -896,20 +648,13 @@ TEST(TestSymReg, Nguyen3)
                          4,
                          paramsValue};
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"Nguyen3",
+                           "x+x**2+x**3+x**4+x**5",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, Nguyen4)
+BenchmarkResult test_Nguyen4(double noisePercentage)
 {
-    //f(x) = x**6 + x**5 + x**4 + x**3 + x**2 + x
-
     //srand(0);
     srand(time(0));
 
@@ -917,6 +662,7 @@ TEST(TestSymReg, Nguyen4)
 
     Eigen::ArrayXd x(n);
     x.setRandom();
+    x = noiseData(x, noisePercentage);
 
     auto const y{x.pow(6) + x.pow(5) + x.pow(4) + x.pow(3) + x.pow(2) + x};
 
@@ -933,20 +679,13 @@ TEST(TestSymReg, Nguyen4)
                          4,
                          paramsValue};
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"Nguyen4",
+                           "x+x**2+x**3+x**4+x**5+x**6",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, Nguyen5)
+BenchmarkResult test_Nguyen5(double noisePercentage)
 {
-    //f(x) = sin(x**2)cos(x)-1
-
     //srand(0);
     srand(time(0));
 
@@ -954,6 +693,7 @@ TEST(TestSymReg, Nguyen5)
 
     Eigen::ArrayXd x(n);
     x.setRandom();
+    x = noiseData(x, noisePercentage);
 
     auto const y{Eigen::sin(x * x) * Eigen::cos(x) - 1};
 
@@ -981,21 +721,15 @@ TEST(TestSymReg, Nguyen5)
                          operatorDepth,
                          extraExpressions};
     //sr.exhaustiveLimit = 1e6; //Optimal expression can generate 3^14 combinations
+    sr.keepBestLimit = 25;
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"Nguyen5",
+                           "sin(x**2)*cos(x)-1",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, Nguyen6)
+BenchmarkResult test_Nguyen6(double noisePercentage)
 {
-    //f(x) = sin(x)+sin(x+x**2)
-
     //srand(0);
     srand(time(0));
 
@@ -1003,6 +737,7 @@ TEST(TestSymReg, Nguyen6)
 
     Eigen::ArrayXd x(n);
     x.setRandom();
+    x = noiseData(x, noisePercentage);
 
     auto const y{Eigen::sin(x) + Eigen::sin(x + x * x)};
 
@@ -1027,21 +762,15 @@ TEST(TestSymReg, Nguyen6)
                          paramsValue,
                          operatorDepth,
                          extraExpressions};
+    sr.keepBestLimit = 25;
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"Nguyen6",
+                           "sin(x)+sin(x+x**2)",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, Nguyen7)
+BenchmarkResult test_Nguyen7(double noisePercentage)
 {
-    //f(x) = log(x + 1) + log(x**2 + 1)
-
     //srand(0);
     srand(time(0));
 
@@ -1050,6 +779,7 @@ TEST(TestSymReg, Nguyen7)
     Eigen::ArrayXd x(n);
     x.setRandom();
     x += 1;
+    x = noiseData(x, noisePercentage);
 
     auto const y{Eigen::log(x + 1) + Eigen::log(x * x + 1)};
 
@@ -1074,21 +804,15 @@ TEST(TestSymReg, Nguyen7)
                          paramsValue,
                          operatorDepth,
                          extraExpressions};
+    sr.keepBestLimit = 25;
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"Nguyen7",
+                           "log(x+1)+log(x**2+1)",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, Nguyen8)
+BenchmarkResult test_Nguyen8(double noisePercentage)
 {
-    //f(x) = sqrt(x)
-
     //srand(0);
     srand(time(0));
 
@@ -1097,6 +821,7 @@ TEST(TestSymReg, Nguyen8)
     Eigen::ArrayXd x(n);
     x.setRandom();
     x += 1;
+    x = noiseData(x, noisePercentage);
 
     auto const y{Eigen::sqrt(x)};
 
@@ -1112,20 +837,13 @@ TEST(TestSymReg, Nguyen8)
                          2,
                          paramsValue};
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"Nguyen8",
+                           "sqrt(x)",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, Nguyen9)
+BenchmarkResult test_Nguyen9(double noisePercentage)
 {
-    //f(x) = sin(x1)+sin(x2**2)
-
     //srand(0);
     srand(time(0));
 
@@ -1133,8 +851,10 @@ TEST(TestSymReg, Nguyen9)
 
     Eigen::ArrayXd x1(n);
     x1.setRandom();
+    x1 = noiseData(x1, noisePercentage);
     Eigen::ArrayXd x2(n);
     x2.setRandom();
+    x2 = noiseData(x2, noisePercentage);
 
     auto const y{Eigen::sin(x1) + Eigen::sin(x2 * x2)};
 
@@ -1160,21 +880,15 @@ TEST(TestSymReg, Nguyen9)
                          paramsValue,
                          operatorDepth,
                          extraExpressions};
+    sr.keepBestLimit = 100;
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"Nguyen9",
+                           "sin(x1)+sin(x2**2)",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, Nguyen10)
+BenchmarkResult test_Nguyen10(double noisePercentage)
 {
-    //f(x) = 2sin(x1)cos(x2)
-
     //srand(0);
     srand(time(0));
 
@@ -1182,8 +896,10 @@ TEST(TestSymReg, Nguyen10)
 
     Eigen::ArrayXd x1(n);
     x1.setRandom();
+    x1 = noiseData(x1, noisePercentage);
     Eigen::ArrayXd x2(n);
     x2.setRandom();
+    x2 = noiseData(x2, noisePercentage);
 
     auto const y{2 * Eigen::sin(x1) * Eigen::cos(x2)};
 
@@ -1202,21 +918,15 @@ TEST(TestSymReg, Nguyen10)
                          2,
                          paramsValue,
                          operatorDepth};
+    sr.keepBestLimit = 25;
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"Nguyen10",
+                           "2*sin(x1)*cos(x2)",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, Keijzer10)
+BenchmarkResult test_Keijzer10(double noisePercentage)
 {
-    //f(x) = x1**x2
-
     //srand(0);
     srand(time(0));
 
@@ -1225,9 +935,11 @@ TEST(TestSymReg, Keijzer10)
     Eigen::ArrayXd x1(n);
     x1.setRandom();
     x1 += 1;
+    x1 = noiseData(x1, noisePercentage);
     Eigen::ArrayXd x2(n);
     x2.setRandom();
     x2 += 1;
+    x2 = noiseData(x2, noisePercentage);
 
     auto const y{Eigen::pow(x1, x2)};
 
@@ -1243,19 +955,16 @@ TEST(TestSymReg, Keijzer10)
                          2,
                          paramsValue};
 
-    auto const r{sr.fit(y)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"Keijzer10",
+                           "x1**x2",
+                           sr.fit(noiseData(y, noisePercentage))};
 }
 
-TEST(TestSymReg, d_bacres1)
+BenchmarkResult test_d_bacres1(double noisePercentage)
 {
-    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_bacres1.txt")};
+    auto data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_bacres1.txt")};
+    data.x = noiseData(data.x, noisePercentage);
+    data.y = noiseData(data.y, noisePercentage);
 
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
@@ -1282,20 +991,18 @@ TEST(TestSymReg, d_bacres1)
                          paramValues,
                          operatorDepth,
                          extraExpressions};
+    sr.keepBestLimit = 100;
 
-    auto const r{sr.fit(data.label)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"d_bacres1",
+                           "20-x-(x*y/(1+0.5*x**2))",
+                           sr.fit(noiseData(data.label, noisePercentage))};
 }
 
-TEST(TestSymReg, d_bacres2)
+BenchmarkResult test_d_bacres2(double noisePercentage)
 {
-    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_bacres2.txt")};
+    auto data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_bacres2.txt")};
+    data.x = noiseData(data.x, noisePercentage);
+    data.y = noiseData(data.y, noisePercentage);
 
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
@@ -1322,20 +1029,18 @@ TEST(TestSymReg, d_bacres2)
                          paramValues,
                          operatorDepth,
                          extraExpressions};
+    sr.keepBestLimit = 1000;
 
-    auto const r{sr.fit(data.label)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"d_bacres2",
+                           "10-(x*y/(1+0.5*x**2))",
+                           sr.fit(noiseData(data.label, noisePercentage))};
 }
 
-TEST(TestSymReg, d_barmag1)
+BenchmarkResult test_d_barmag1(double noisePercentage)
 {
-    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_barmag1.txt")};
+    auto data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_barmag1.txt")};
+    data.x = noiseData(data.x, noisePercentage);
+    data.y = noiseData(data.y, noisePercentage);
 
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
@@ -1352,20 +1057,18 @@ TEST(TestSymReg, d_barmag1)
                          3,
                          paramsValue,
                          operatorDepth};
+    sr.keepBestLimit = 100;
 
-    auto const r{sr.fit(data.label)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"d_barmag1",
+                           "0.5*sin(x-y)-sin(x)",
+                           sr.fit(noiseData(data.label, noisePercentage))};
 }
 
-TEST(TestSymReg, d_barmag2)
+BenchmarkResult test_d_barmag2(double noisePercentage)
 {
-    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_barmag2.txt")};
+    auto data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_barmag2.txt")};
+    data.x = noiseData(data.x, noisePercentage);
+    data.y = noiseData(data.y, noisePercentage);
 
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
@@ -1381,20 +1084,18 @@ TEST(TestSymReg, d_barmag2)
                          3,
                          paramsValue,
                          operatorDepth};
+    sr.keepBestLimit = 100;
 
-    auto const r{sr.fit(data.label)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"d_barmag2",
+                           "0.5*sin(y-x)-sin(y)",
+                           sr.fit(noiseData(data.label, noisePercentage))};
 }
 
-TEST(TestSymReg, d_glider1)
+BenchmarkResult test_d_glider1(double noisePercentage)
 {
-    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_glider1.txt")};
+    auto data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_glider1.txt")};
+    data.x = noiseData(data.x, noisePercentage);
+    data.y = noiseData(data.y, noisePercentage);
 
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
@@ -1410,20 +1111,18 @@ TEST(TestSymReg, d_glider1)
                          3,
                          paramsValue,
                          operatorDepth};
+    sr.keepBestLimit = 50;
 
-    auto const r{sr.fit(data.label)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"d_glider1",
+                           "-0.05*x**2-sin(y)",
+                           sr.fit(noiseData(data.label, noisePercentage))};
 }
 
-TEST(TestSymReg, d_glider2)
+BenchmarkResult test_d_glider2(double noisePercentage)
 {
-    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_glider2.txt")};
+    auto data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_glider2.txt")};
+    data.x = noiseData(data.x, noisePercentage);
+    data.y = noiseData(data.y, noisePercentage);
 
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
@@ -1441,6 +1140,11 @@ TEST(TestSymReg, d_glider2)
                          3,
                          paramsValue,
                          operatorDepth};
+    sr.keepBestLimit = 50;
+
+    return BenchmarkResult{"d_glider2",
+                           "x-cos(y)/x",
+                           sr.fit(noiseData(data.label, noisePercentage))};
 */
     auto const cy{data.y.cos()};
     auto const sy{data.y.sin()};
@@ -1456,21 +1160,18 @@ TEST(TestSymReg, d_glider2)
                          3,
                          paramsValue,
                          operatorDepth};
+    sr.keepBestLimit = 50;
 
-
-    auto const r{sr.fit(data.label)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"d_glider2",
+                           "x-cy/x",
+                           sr.fit(noiseData(data.label, noisePercentage))};
 }
 
-TEST(TestSymReg, d_lv1)
+BenchmarkResult test_d_lv1(double noisePercentage)
 {
-    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_lv1.txt")};
+    auto data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_lv1.txt")};
+    data.x = noiseData(data.x, noisePercentage);
+    data.y = noiseData(data.y, noisePercentage);
 
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
@@ -1487,20 +1188,18 @@ TEST(TestSymReg, d_lv1)
                          3,
                          paramsValue,
                          operatorDepth};
+    sr.keepBestLimit = 100;
 
-    auto const r{sr.fit(data.label)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"d_lv1",
+                           "3*x-2*x*y-x**2",
+                           sr.fit(noiseData(data.label, noisePercentage))};
 }
 
-TEST(TestSymReg, d_lv2)
+BenchmarkResult test_d_lv2(double noisePercentage)
 {
-    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_lv2.txt")};
+    auto data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_lv2.txt")};
+    data.x = noiseData(data.x, noisePercentage);
+    data.y = noiseData(data.y, noisePercentage);
 
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
@@ -1517,20 +1216,18 @@ TEST(TestSymReg, d_lv2)
                          3,
                          paramsValue,
                          operatorDepth};
+    sr.keepBestLimit = 100;
 
-    auto const r{sr.fit(data.label)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"d_lv2",
+                           "2*y-x*y-y**2",
+                           sr.fit(noiseData(data.label, noisePercentage))};
 }
 /*
-TEST(TestSymReg, d_predprey1)
+BenchmarkResult test_d_predprey1(double noisePercentage)
 {
-    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_predprey1.txt")};
+    auto data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_predprey1.txt")};
+    data.x = noiseData(data.x, noisePercentage);
+    data.y = noiseData(data.y, noisePercentage);
 
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
@@ -1548,20 +1245,18 @@ TEST(TestSymReg, d_predprey1)
                          3,
                          paramsValue,
                          operatorDepth};
+    sr.keepBestLimit = 100;
 
-    auto const r{sr.fit(data.label)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"d_predprey1",
+                           "x*(4-x-y/(1+x))",
+                           sr.fit(noiseData(data.label, noisePercentage))};
 }
-*//*
-TEST(TestSymReg, d_predprey2)
+
+BenchmarkResult test_d_predprey2(double noisePercentage)
 {
-    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_predprey2.txt")};
+    auto data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_predprey2.txt")};
+    data.x = noiseData(data.x, noisePercentage);
+    data.y = noiseData(data.y, noisePercentage);
 
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
@@ -1579,20 +1274,18 @@ TEST(TestSymReg, d_predprey2)
                          3,
                          paramsValue,
                          operatorDepth};
+    sr.keepBestLimit = 100;
 
-    auto const r{sr.fit(data.label)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"d_predprey2",
+                           "y*(x/(1+x)-0.075*y)",
+                           sr.fit(noiseData(data.label, noisePercentage))};
 }
 */
-TEST(TestSymReg, d_shearflow1)
+BenchmarkResult test_d_shearflow1(double noisePercentage)
 {
-    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_shearflow1.txt")};
+    auto data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_shearflow1.txt")};
+    data.x = noiseData(data.x, noisePercentage);
+    data.y = noiseData(data.y, noisePercentage);
 
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
@@ -1610,20 +1303,18 @@ TEST(TestSymReg, d_shearflow1)
                          3,
                          paramsValue,
                          operatorDepth};
+    sr.keepBestLimit = 100;
 
-    auto const r{sr.fit(data.label)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"d_shearflow1",
+                           "cos(x)*cot(y)",
+                           sr.fit(noiseData(data.label, noisePercentage))};
 }
 
-TEST(TestSymReg, d_shearflow2)
+BenchmarkResult test_d_shearflow2(double noisePercentage)
 {
-    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_shearflow2.txt")};
+    auto data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_shearflow2.txt")};
+    data.x = noiseData(data.x, noisePercentage);
+    data.y = noiseData(data.y, noisePercentage);
 
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
@@ -1642,6 +1333,11 @@ TEST(TestSymReg, d_shearflow2)
                          3,
                          paramsValue,
                          operatorDepth};
+    sr.keepBestLimit = 100;
+
+    return BenchmarkResult{"d_shearflow2",
+                           "(cos(y)**2+0.1*sin(y)**2)*sin(x)",
+                           sr.fit(noiseData(data.label, noisePercentage))};
 */
     auto const cx{data.x.cos()};
     auto const sx{data.x.sin()};
@@ -1659,21 +1355,18 @@ TEST(TestSymReg, d_shearflow2)
                          3,
                          paramsValue,
                          operatorDepth};
+    sr.keepBestLimit = 1000;
 
-
-    auto const r{sr.fit(data.label)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"d_shearflow2",
+                           "(cy**2+0.1*sy**2)*sx",
+                           sr.fit(noiseData(data.label, noisePercentage))};
 }
 
-TEST(TestSymReg, d_vdp1)
+BenchmarkResult test_d_vdp1(double noisePercentage)
 {
-    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_vdp1.txt")};
+    auto data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_vdp1.txt")};
+    data.x = noiseData(data.x, noisePercentage);
+    data.y = noiseData(data.y, noisePercentage);
 
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
@@ -1690,20 +1383,18 @@ TEST(TestSymReg, d_vdp1)
                          3,
                          paramsValue,
                          operatorDepth};
+    sr.keepBestLimit = 100;
 
-    auto const r{sr.fit(data.label)};
-
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
-
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+    return BenchmarkResult{"d_vdp1",
+                           "10*(y-(1/3*(x**3-x)))",
+                           sr.fit(noiseData(data.label, noisePercentage))};
 }
 
-TEST(TestSymReg, d_vdp2)
+BenchmarkResult test_d_vdp2(double noisePercentage)
 {
-    auto const data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_vdp2.txt")};
+    auto data{downloadUrlData("https://raw.githubusercontent.com/lacava/ode-strogatz/master/d_vdp2.txt")};
+    data.x = noiseData(data.x, noisePercentage);
+    data.y = noiseData(data.y, noisePercentage);
 
     using Var = Variable<double>;
     using UnOp = UnaryOperator<double>;
@@ -1720,13 +1411,250 @@ TEST(TestSymReg, d_vdp2)
                          3,
                          paramsValue,
                          operatorDepth};
+    sr.keepBestLimit = 100;
 
-    auto const r{sr.fit(data.label)};
+    return BenchmarkResult{"d_vdp2",
+                           "-0.1*x",
+                           sr.fit(noiseData(data.label, noisePercentage))};
+}
 
-    std::cout << r.loss << std::endl;
-    std::cout << expr(r.expression.str()) << std::endl;
-    std::cout << r.expression.optStr() << std::endl;
-    std::cout << r.expression.sympyStr(sr.eps) << std::endl;
+void output(BenchmarkResult const& result, std::chrono::milliseconds const& time)
+{
+    std::cout << "|" << result.name << "|" << result.result.loss << "|" << result.result.time << "|" << time << "|`" << result.expression << "`|`" << result.result.expression.sympyStr(0.1) << "`|\n";
+}
 
-    EXPECT_TRUE(r.loss < sr.epsLoss);
+int main(int argc, char** argv)
+{
+    double percentage{0};
+
+    if (argc > 1)
+        percentage = std::stod(argv[1]);
+
+    std::cout << "# Benchmark with " << percentage << "% of noise" << std::endl;
+    std::cout << "|Test name|MSE|Expression time|Test time|Input symbolic expression|Found symbolic expression|\n";
+    std::cout << "|-|-|-|-|-|-|\n";
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_5x1Add7x2Addx3Add8(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_LinearFit(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_LogFit(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_Test1(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_Test2(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_Test3(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_Test4(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_Test5(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_Test6(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_PySR(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_GPLearn(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_x1Mulx2(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_Nguyen1(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_Nguyen2(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_Nguyen3(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_Nguyen4(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_Nguyen5(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_Nguyen6(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_Nguyen7(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_Nguyen8(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_Nguyen9(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_Nguyen10(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_Keijzer10(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_d_bacres1(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_d_bacres2(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_d_barmag1(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_d_barmag2(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_d_glider1(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_d_glider2(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_d_lv1(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_d_lv2(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+/*
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_d_predprey1(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_d_predprey2(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+*/
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_d_shearflow1(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_d_shearflow2(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_d_vdp1(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const result{test_d_vdp2(percentage)};
+        output(result, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now));
+    }
+
+    return 0;
 }

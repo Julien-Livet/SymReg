@@ -23,9 +23,17 @@ namespace sr
     class SymbolicRegressor
     {
         public:
+            struct Result
+            {
+                T loss;
+                Expression<T> expression;
+                std::chrono::milliseconds time;
+            };
+        
             T eps = 1e-4;
             T epsLoss = 1e-12;
             size_t exhaustiveLimit = 1e5;
+            size_t keepBestLimit;
 
             SymbolicRegressor(std::vector<Variable<T> > const& variables,
                               std::vector<UnaryOperator<T> > const& un_ops = std::vector<UnaryOperator<T> >{},
@@ -35,14 +43,15 @@ namespace sr
                               std::map<std::string, size_t> const& operatorDepth = std::map<std::string, size_t>{},
                               std::vector<Expression<T> > const& extraExpressions = std::vector<Expression<T> >{},
                               bool verbose = false,
-                              std::function<void(Expression<T> const&, T const&)> const& callback = [] (Expression<T> const&, T const&) {},
+                              std::function<void(Result const&)> const& callback = [] (Result const&) {},
                               bool discreteParams = true,
-                              size_t timeout = 30 * 60)
+                              size_t timeout = 30 * 60,
+                              size_t keepBestLimit = 10000)
                 : variables_{variables}, un_ops_{un_ops}, bin_ops_{bin_ops},
                   niterations_{niterations}, paramValues_{paramValues},
                   operatorDepth_{operatorDepth}, extraExpressions_{extraExpressions},
                   verbose_{verbose}, callback_(callback), discreteParams_{discreteParams},
-                  timeout_{timeout}
+                  timeout_{timeout}, keepBestLimit{keepBestLimit}
             {
                 if (!verbose)
                     auto const f{freopen("/tmp/stderr.txt", "w", stderr)};
@@ -63,20 +72,26 @@ namespace sr
                 return bin_ops_;
             }
 
-            std::pair<T, Expression<T> > fit(Eigen::Array<T, Eigen::Dynamic, 1> const& y)
+            Result fit(Eigen::Array<T, Eigen::Dynamic, 1> const& y)
             {
+                isTimeout_ = false;
+
+                auto const now{std::chrono::steady_clock::now()};
+                size_t keepBestCount{0};
                 std::vector<Expression<T> > expressions;
-                std::vector<T> costs;
+
+                std::vector<Result> results;
 
                 std::atomic<bool> timeoutTriggered = false;
                 boost::asio::io_context io;
 
                 boost::asio::steady_timer timer(io, std::chrono::seconds(timeout_));
 
-                timer.async_wait([&] (boost::system::error_code const& ec)
+                timer.async_wait([&, this] (boost::system::error_code const& ec)
                                  {
                                      if (!ec)
                                      {
+                                         isTimeout_ = true;
                                          timeoutTriggered = true;
                                          io.stop();
                                      }
@@ -96,10 +111,10 @@ namespace sr
                         && (e.sympyStr() == "0.0" || e.sympyStr() == "0"))
                         cost = std::numeric_limits<T>::infinity();
 
+                    results.emplace_back(Result{cost, e, std::chrono::milliseconds(0)});
                     expressions.emplace_back(e);
-                    costs.emplace_back(cost);
 
-                    callback_(e, cost);
+                    callback_(results.back());
 
                     if (cost < epsLoss)
                         break;
@@ -117,32 +132,26 @@ namespace sr
                         && (e.sympyStr() == "0.0" || e.sympyStr() == "0"))
                         cost = std::numeric_limits<T>::infinity();
 
+                    results.emplace_back(Result{cost, e, std::chrono::milliseconds(0)});
                     expressions.emplace_back(e);
-                    costs.emplace_back(cost);
 
-                    callback_(e, cost);
+                    callback_(results.back());
 
                     if (cost < epsLoss)
                         break;
                 }
 
-                std::vector<std::pair<T, Expression<T> > > paired;
-
                 {
-                    for (size_t i{0}; i < costs.size(); ++i)
-                        paired.emplace_back(costs[i], expressions[i]);
+                    std::sort(results.begin(), results.end(), [] (auto const& x, auto const& y) {return x.loss < y.loss;});
 
-                    std::sort(paired.begin(), paired.end(), [] (auto const& x, auto const& y) {return x.first < y.first;});
-
-                    for (size_t i{0}; i < paired.size(); ++i)
-                        expressions[i] = paired[i].second;
-
-                    if (!paired.empty() && paired.front().first < epsLoss)
+                    if (!results.empty() && results.front().loss < epsLoss)
                     {
                         io.stop();
                         io_thread.join();
+                        
+                        results_ = results;
 
-                        return paired.front();
+                        return results.front();
                     }
                 }
 
@@ -156,13 +165,14 @@ namespace sr
                     binIndices[i] = std::vector<std::pair<size_t, size_t> >{};
 
                 auto const yNull{boost::math::tools::l2_norm(y) < eps};
+                T bestLoss{std::numeric_limits<T>::infinity()};
 
                 for (size_t i{0}; i < niterations_; ++i)
                 {
                     if (timeoutTriggered)
                         break;
 
-                    auto function = [this, y, yNull, &timeoutTriggered] (Expression<T> e) -> std::pair<T, Expression<T> >
+                    auto function = [this, y, yNull, &timeoutTriggered, &keepBestCount, now, &bestLoss] (Expression<T> e) -> Result
                                     {
                                         auto cost{e.fit(y, paramValues_, epsLoss, verbose_, exhaustiveLimit, discreteParams_, timeoutTriggered)};
 
@@ -172,17 +182,28 @@ namespace sr
                                                 cost = std::numeric_limits<T>::infinity();
                                         }
 
-                                        callback_(e, cost);
+                                        Result const r{cost, e, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now)};
+
+                                        callback_(r);
 
                                         if (cost < epsLoss)
                                             timeoutTriggered = true;
 
-                                        return std::make_pair(cost, e);
+                                        if (++keepBestCount >= keepBestLimit)
+                                            timeoutTriggered = true;
+
+                                        if (cost < bestLoss)
+                                        {
+                                            bestLoss = cost;
+                                            keepBestCount = 0;
+                                        }
+
+                                        return r;
                                     };
 
                     {
                         size_t const n{expressions.size()};
-                        std::vector<std::future<std::pair<T, Expression<T> > > > futures;
+                        std::vector<std::future<Result> > futures;
 
                         for (size_t j = 0; j < n; ++j)
                         {
@@ -214,36 +235,28 @@ namespace sr
 
                         for (auto& f : futures)
                         {
-                            auto const p{f.get()};
-
-                            costs.emplace_back(p.first);
-                            expressions.emplace_back(p.second);
+                            results.emplace_back(f.get());
+                            expressions.emplace_back(results.back().expression);
                         }
                     }
 
                     {
-                        paired.clear();
+                        std::sort(results.begin(), results.end(), [] (auto const& x, auto const& y) {return x.loss < y.loss;});
 
-                        for (size_t i{0}; i < costs.size(); ++i)
-                            paired.emplace_back(costs[i], expressions[i]);
-
-                        std::sort(paired.begin(), paired.end(), [] (auto const& x, auto const& y) {return x.first < y.first;});
-
-                        for (size_t i{0}; i < paired.size(); ++i)
-                            expressions[i] = paired[i].second;
-
-                        if (!paired.empty() && paired.front().first < epsLoss)
+                        if (!results.empty() && results.front().loss < epsLoss)
                         {
                             io.stop();
                             io_thread.join();
+                            
+                            results_ = results;
 
-                            return paired.front();
+                            return results.front();
                         }
                     }
 
                     {
                         size_t const n{expressions.size()};
-                        std::vector<std::future<std::pair<T, Expression<T> > > > futures;
+                        std::vector<std::future<Result> > futures;
 
                         for (size_t j1 = 0; j1 < n; ++j1)
                         {
@@ -289,30 +302,22 @@ namespace sr
 
                         for (auto& f : futures)
                         {
-                            auto const p{f.get()};
-
-                            costs.emplace_back(p.first);
-                            expressions.emplace_back(p.second);
+                            results.emplace_back(f.get());
+                            expressions.emplace_back(results.back().expression);
                         }
                     }
 
                     {
-                        paired.clear();
+                        std::sort(results.begin(), results.end(), [] (auto const& x, auto const& y) {return x.loss < y.loss;});
 
-                        for (size_t i{0}; i < costs.size(); ++i)
-                            paired.emplace_back(costs[i], expressions[i]);
-
-                        std::sort(paired.begin(), paired.end(), [] (auto const& x, auto const& y) {return x.first < y.first;});
-
-                        for (size_t i{0}; i < paired.size(); ++i)
-                            expressions[i] = paired[i].second;
-
-                        if (!paired.empty() && paired.front().first < epsLoss)
+                        if (!results.empty() && results.front().loss < epsLoss)
                         {
                             io.stop();
                             io_thread.join();
 
-                            return paired.front();
+                            results_ = results;
+
+                            return results.front();
                         }
                     }
                 }
@@ -320,10 +325,22 @@ namespace sr
                 io.stop();
                 io_thread.join();
 
-                if (paired.empty())
+                results_ = results;
+
+                if (results.empty())
                     throw std::runtime_error("No expression found!");
 
-                return paired.front();
+                return results_.front();
+            }
+
+            bool isTimeout() const
+            {
+                return isTimeout_;
+            }
+            
+            std::vector<Result> const& results() const
+            {
+                return results_;
             }
 
         private:
@@ -335,9 +352,11 @@ namespace sr
             std::map<std::string, size_t> operatorDepth_;
             std::vector<Expression<T> > extraExpressions_;
             bool verbose_;
-            std::function<void(Expression<T> const&, T const&)> callback_;
+            std::function<void(Result const&)> callback_;
             bool discreteParams_;
             size_t timeout_;
+            bool isTimeout_{false};
+            std::vector<Result> results_;
     };
 }
 
