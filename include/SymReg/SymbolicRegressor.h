@@ -29,7 +29,7 @@ namespace sr
                 Expression<T> expression;
                 std::chrono::milliseconds time;
             };
-        
+
             T eps = 1e-4;
             T epsLoss = 1e-12;
             size_t exhaustiveLimit = 1e5;

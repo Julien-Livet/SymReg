@@ -49,6 +49,7 @@ mkdir build && cd build
 cmake ..
 make -j$(nproc)
 sudo make install
+pip install --break-system-packages -e .
 ./benchmark 0
 ./primes_demo
 ctest -V

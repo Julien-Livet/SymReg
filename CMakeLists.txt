@@ -37,6 +37,10 @@ add_compile_definitions(EIGEN_NO_DEBUG)
 
 set(CMAKE_AUTOMOC ON)
 
+add_definitions(-DPYBIND11_DETAILED_ERROR_MESSAGES)
+pybind11_add_module(symreg src/python_bindings.cpp)
+target_link_libraries(symreg PRIVATE armadillo Ceres::ceres)
+
 add_executable(primes_demo src/primes_demo.cpp)
 target_link_libraries(primes_demo
 #  asan ubsan

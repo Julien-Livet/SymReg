@@ -140,7 +140,7 @@ namespace sr
                                      [] (auto const& x) {return x.tanh();},
                                      [] (auto const& x) {return sym::tanh(x);}};
             }
-
+/*
             static UnaryOperator acosh()
             {
                 return UnaryOperator{"acosh",
@@ -164,7 +164,7 @@ namespace sr
                                      [] (auto const& x) {return x.atanh();},
                                      [] (auto const& x) {return sym::atanh(x);}};
             }
-
+*/
             static UnaryOperator sqrt()
             {
                 return UnaryOperator{"sqrt",
