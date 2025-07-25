@@ -42,5 +42,6 @@ def test_pysr():
     r = model.fit(y)
 
     print(r.expression.optStr())
-    
+    print(r.expression.dot())
+
     assert(r.loss < model.epsLoss)

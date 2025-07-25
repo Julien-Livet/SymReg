@@ -18,7 +18,10 @@ PYBIND11_MODULE(symreg, m)
     py::class_<Expression<double> >(m, "Expression")
         .def("str", &Expression<double>::str)
         .def("optStr", &Expression<double>::optStr)
-        .def("dot", &Expression<double>::dot)
+        .def("dot", [] (Expression<double> const& self)
+                    {
+                        return self.dot(false);
+                    })
         .def_static("var", [] (Variable<double> const& v)
                            {
                                return Expression<double>{v};

@@ -1082,7 +1082,7 @@ namespace sr
                 }
             }
 
-            std::string dot() const
+            std::string dot(bool withSympyStr = true) const
             {
                 std::ostringstream oss;
 
@@ -1097,8 +1097,10 @@ namespace sr
                     root.tooltip += "\n";
 
                 root.tooltip += "Symbolic expression: " + expr(str()) + "\n"
-                                + "Optimal expression: " + optStr() + "\n"
-                                + "Sympy expression: " + sympyStr();
+                                + "Optimal expression: " + optStr();
+                
+                if (withSympyStr)
+                     root.tooltip += "\nSympy expression: " + sympyStr();
 
                 size_t counter{0};
                 writeDot(&root, oss, counter);
