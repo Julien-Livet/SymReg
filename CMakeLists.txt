@@ -39,26 +39,26 @@ set(CMAKE_AUTOMOC ON)
 
 add_definitions(-DPYBIND11_DETAILED_ERROR_MESSAGES)
 pybind11_add_module(symreg src/python_bindings.cpp)
-target_link_libraries(symreg PRIVATE armadillo Ceres::ceres)
+target_link_libraries(symreg PRIVATE armadillo Ceres::ceres Sym::Sym)
 
 add_executable(primes_demo src/primes_demo.cpp)
 target_link_libraries(primes_demo
 #  asan ubsan
   pybind11::embed Python3::Python
-  Ceres::ceres Qt5::Widgets Qt5::Charts armadillo Qt5::Svg Qt5::WebEngineWidgets gvc cgraph)
+  Ceres::ceres Qt5::Widgets Qt5::Charts armadillo Qt5::Svg Qt5::WebEngineWidgets gvc cgraph Sym::Sym)
 
 add_executable(benchmark src/benchmark.cpp)
 target_link_libraries(benchmark
 #  asan ubsan
   pybind11::embed Python3::Python
-  Ceres::ceres CURL::libcurl armadillo)
+  Ceres::ceres CURL::libcurl armadillo Sym::Sym)
 
 enable_testing()
 add_executable(test_symreg tests/test_symreg.cpp)
 target_link_libraries(test_symreg
 #  asan ubsan
   pybind11::embed Python3::Python
-  Ceres::ceres CURL::libcurl gtest gtest_main armadillo)
+  Ceres::ceres CURL::libcurl gtest gtest_main armadillo Sym::Sym)
 
 math(EXPR TIMEOUT "3 * 60 * 60")
 add_test(NAME TestSymReg COMMAND test_symreg)

@@ -55,6 +55,8 @@ ctest -V
 time ./test_symreg --gtest_filter=TestSymReg.Line
 cd ..
 pip install --break-system-packages -e .
+cd scripts
+pytest -s test_symreg.py
 ```
 
 # Benchmark with 0% of noise

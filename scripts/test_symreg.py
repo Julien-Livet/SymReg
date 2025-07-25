@@ -14,6 +14,11 @@ def test_pysr():
 
     paramsValue = [] #[0, 1, -0.5, 2.5382]
     operatorDepth = {"cos": 1, "*": 1, "+": 1}
+    extraExpressions = [sr.Expression.bin(sr.BinaryOperator.plus(),
+                                          sr.Expression.un(sr.UnaryOperator.cos(), sr.Expression.var(variables[3])),
+                                          sr.Expression.bin(sr.BinaryOperator.times(),
+                                                            sr.Expression.var(variables[0]),
+                                                            sr.Expression.var(variables[0])))]
     extraExpressions = []
     verbose = False
     callback = lambda x: None

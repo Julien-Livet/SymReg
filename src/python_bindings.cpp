@@ -17,7 +17,20 @@ PYBIND11_MODULE(symreg, m)
 {
     py::class_<Expression<double> >(m, "Expression")
         .def("str", &Expression<double>::str)
-        .def("optStr", &Expression<double>::optStr);
+        .def("optStr", &Expression<double>::optStr)
+        .def("dot", &Expression<double>::dot)
+        .def_static("var", [] (Variable<double> const& v)
+                           {
+                               return Expression<double>{v};
+                           })
+        .def_static("un", [] (UnaryOperator<double> const& op, Expression<double> const& operand)
+                          {
+                              return Expression<double>{op, operand};
+                          })
+        .def_static("bin", [] (BinaryOperator<double> const& op, Expression<double> const& operand1, Expression<double> const& operand2)
+                           {
+                               return Expression<double>{op, operand1, operand2};
+                           });
 
     py::class_<BinaryOperator<double> > binop(m, "BinaryOperator");
 
