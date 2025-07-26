@@ -22,6 +22,7 @@ PYBIND11_MODULE(symreg, m)
                     {
                         return self.dot(false);
                     })
+        .def("symStr", &Expression<double>::symStr)
         .def_static("var", [] (Variable<double> const& v)
                            {
                                return Expression<double>{v};

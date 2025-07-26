@@ -1,9 +1,16 @@
 import math
 import numpy as np
 import random
+import sympy
+from sympy import Float, Rational
 import symreg as sr
 
+def symStr(e, eps = 1e-4):
+    return e.replace(lambda x: isinstance(x, (Float, Rational)), lambda x: Float(round(float(x) / eps) * eps))
+
 def test_pysr():
+    np.random.seed(0)
+
     X = 2 * np.random.randn(5, 100)
     y = 2.5382 * np.cos(X[3, :]) + X[0, :] ** 2 - 0.5
 
@@ -42,6 +49,8 @@ def test_pysr():
     r = model.fit(y)
 
     print(r.expression.optStr())
-    print(r.expression.dot())
+    print(r.expression.symStr())
+    print(symStr(sympy.expand_trig(sympy.sympify(r.expression.symStr()))))
+    #print(r.expression.dot())
 
     assert(r.loss < model.epsLoss)
