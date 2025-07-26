@@ -6,7 +6,7 @@ from sympy import Float, Rational
 import symreg as sr
 
 def symStr(e, eps = 1e-4):
-    return e.replace(lambda x: isinstance(x, (Float, Rational)), lambda x: Float(round(float(x) / eps) * eps))
+    return sympy.nsimplify(e.replace(lambda x: isinstance(x, (Float, Rational)), lambda x: Float(round(float(x) / eps) * eps)), tolerance = eps).replace(lambda x: isinstance(x, (Float, Rational)), lambda x: Float(x))
 
 def test_pysr():
     np.random.seed(0)
