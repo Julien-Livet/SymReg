@@ -51,6 +51,6 @@ def test_pysr():
     print(r.expression.optStr())
     print(r.expression.symStr())
     print(symStr(sympy.expand_trig(sympy.sympify(r.expression.symStr()))))
-    #print(r.expression.dot())
+    print(r.expression.dot())
 
     assert(r.loss < model.epsLoss)
