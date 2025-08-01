@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QBuffer>
+#include <QDesktopServices>
 #include <QDir>
 #include <QFileDialog>
 #include <QLabel>
@@ -16,16 +17,12 @@
 #include <QThread>
 #include <QTimer>
 #include <QUrl>
-#include <QWebEngineProfile>
-#include <QWebEngineView>
 
 extern "C"
 {
     #include <graphviz/gvc.h>
     #include <graphviz/cgraph.h>
 }
-
-using namespace QtCharts;
 
 using namespace sr;
 
@@ -159,7 +156,7 @@ class DynamicChart : public QObject
 
                 auto const y{e.eval()};
 
-                QLineSeries *series = new QLineSeries();
+                QLineSeries* series = new QLineSeries();
                 series->setName(QString::fromStdString(str));
 
                 for (int i{0}; i < x.size(); ++i)
@@ -176,10 +173,18 @@ class DynamicChart : public QObject
 
                 if (!svgData.isNull())
                 {
-                    QString const html{"<html><body>" + svgData + "</body></html>"};
-
-                    view->setHtml(html);
-                    view->show();
+                    QTemporaryFile file("svg_XXXXXX.html");
+                    file.setAutoRemove(false);
+                    file.open();
+                    QTextStream textStream(&file);
+                    textStream << "<html><body>" << svgData << "</body></html>";
+                    file.close();
+                
+                    QDesktopServices::openUrl(file.fileName());
+                    
+                    QString const fileName{file.fileName()};
+                    
+                    QTimer::singleShot(1000, this, [fileName] () {QFile{fileName}.remove();});
                 }
             }
         }
@@ -223,30 +228,6 @@ class DynamicChart : public QObject
 
             std::map<std::string, size_t> operatorDepth;
             operatorDepth["log"] = 2;
-            
-            view = new QWebEngineView;
-            view->resize(800, 600);
-
-            QObject::connect(view->page()->profile(), &QWebEngineProfile::downloadRequested,
-                             view,
-                             [this] (QWebEngineDownloadItem* download)
-                             {
-                                 auto const fileName{QFileDialog::getSaveFileName(view, "Save file", download->downloadDirectory(), "HTML files (*.html)")};
-                                 
-                                 if (!fileName.isEmpty())
-                                     view->page()->toHtml([this, fileName] (QString const& html)
-                                                          {
-                                                              QFile file(fileName);
-
-                                                              if (file.open(QIODevice::WriteOnly | QIODevice::Text))
-                                                              {
-                                                                  QTextStream out(&file);
-                                                                  out.setCodec("UTF-8");
-                                                                  out << html;
-                                                                  file.close();
-                                                              }
-                                                          });
-                             });
 
             srPtr = std::make_unique<SymbolicRegressor<double> >(std::vector<Var>{Var("n", x)},
                                                                  std::vector<UnOp>{UnOp::log()},
@@ -280,7 +261,6 @@ class DynamicChart : public QObject
         std::unique_ptr<SymbolicRegressor<double> > srPtr;
         FitWorker* worker;
         QThread* thread;
-        QWebEngineView* view;
 };
 
 

@@ -25,7 +25,7 @@ FetchContent_MakeAvailable(googletest)
 
 find_package(Ceres REQUIRED)
 find_package(CURL REQUIRED)
-find_package(Qt5 REQUIRED COMPONENTS Widgets Charts Svg WebEngineWidgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Charts Svg)
 find_package(Armadillo REQUIRED)
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 REQUIRED)
@@ -39,33 +39,69 @@ set(CMAKE_AUTOMOC ON)
 
 add_definitions(-DPYBIND11_DETAILED_ERROR_MESSAGES)
 pybind11_add_module(symreg src/python_bindings.cpp)
-target_link_libraries(symreg PRIVATE armadillo Ceres::ceres Sym::Sym)
+
+if (WIN32)
+    target_link_libraries(symreg PRIVATE armadillo Ceres::ceres Sym::Sym Ws2_32)
+else()
+    target_link_libraries(symreg PRIVATE armadillo Ceres::ceres Sym::Sym)
+endif()
 
 add_executable(primes_demo src/primes_demo.cpp)
-target_link_libraries(primes_demo
-#  asan ubsan
-  pybind11::embed Python3::Python
-  Ceres::ceres Qt5::Widgets Qt5::Charts armadillo Qt5::Svg Qt5::WebEngineWidgets gvc cgraph Sym::Sym)
+
+if (WIN32)
+    target_link_libraries(primes_demo
+      ${MLPACK_LIBRARIES}
+    #  asan ubsan
+      pybind11::embed Python3::Python
+      Ceres::ceres Qt6::Widgets Qt6::Charts armadillo Qt6::Svg gvc cgraph Sym::Sym Ws2_32)
+else()
+    target_link_libraries(primes_demo
+      ${MLPACK_LIBRARIES}
+    #  asan ubsan
+      pybind11::embed Python3::Python
+      Ceres::ceres Qt6::Widgets Qt6::Charts armadillo Qt6::Svg gvc cgraph Sym::Sym)
+endif()
 
 add_executable(benchmark src/benchmark.cpp)
-target_link_libraries(benchmark
-#  asan ubsan
-  pybind11::embed Python3::Python
-  Ceres::ceres CURL::libcurl armadillo Sym::Sym)
+
+if (WIN32)
+    target_link_libraries(benchmark
+    #  asan ubsan
+      pybind11::embed Python3::Python
+      Ceres::ceres CURL::libcurl armadillo Sym::Sym Ws2_32)
+else()
+    target_link_libraries(benchmark
+    #  asan ubsan
+      pybind11::embed Python3::Python
+      Ceres::ceres CURL::libcurl armadillo Sym::Sym)
+endif()
 
 enable_testing()
 add_executable(test_symreg tests/test_symreg.cpp)
-target_link_libraries(test_symreg
-#  asan ubsan
-  pybind11::embed Python3::Python
-  Ceres::ceres CURL::libcurl gtest gtest_main armadillo Sym::Sym)
+
+if (WIN32)
+    target_link_libraries(test_symreg
+      ${MLPACK_LIBRARIES}
+    #  asan ubsan
+      pybind11::embed Python3::Python
+      Ceres::ceres CURL::libcurl gtest gtest_main armadillo Sym::Sym Ws2_32)
+else()
+    target_link_libraries(test_symreg
+      ${MLPACK_LIBRARIES}
+    #  asan ubsan
+      pybind11::embed Python3::Python
+      Ceres::ceres CURL::libcurl gtest gtest_main armadillo Sym::Sym)
+endif()
 
 math(EXPR TIMEOUT "3 * 60 * 60")
 add_test(NAME TestSymReg COMMAND test_symreg)
 set_tests_properties(TestSymReg PROPERTIES TIMEOUT ${TIMEOUT})
 
+if (WIN32)
+else()
 include(GoogleTest)
 gtest_discover_tests(test_symreg)
+endif()
 
 install(DIRECTORY include/SymReg DESTINATION include)
 

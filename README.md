@@ -23,9 +23,11 @@ It is possible to call user callback during process with ```callback```.
 
 ## Installation
 
+### Linux
+
 ```
 sudo apt update
-sudo apt install -y cmake make git libcurl4-openssl-dev libboost-dev libqt5charts5-dev libmlpack-dev libensmallen-dev libarmadillo-dev libstb-dev pybind11-dev graphviz libgraphviz-dev libqt5svg5-dev qtwebengine5-dev build-essential python3-sympy
+sudo apt install -y cmake make git libcurl4-openssl-dev libboost-dev libqt6charts6-dev libmlpack-dev libensmallen-dev libarmadillo-dev libstb-dev pybind11-dev graphviz libgraphviz-dev libqt6svg6-dev build-essential python3-sympy
 sudo apt install -y libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev
 cd ~
 mkdir symreg_ws
@@ -33,19 +35,22 @@ cd symreg_ws
 git clone https://github.com/Julien-Livet/SymReg.git
 git clone --recursive https://ceres-solver.googlesource.com/ceres-solver
 cd ceres-solver
-mkdir build && cd build
+mkdir build
+cd build
 cmake .. -DBUILD_TESTING=OFF
 make -j$(nproc)
 sudo make install
 cd ../..
 git clone https://github.com/Julien-Livet/Sym.git
 cd Sym
-mkdir build && cd build
+mkdir build
+cd build
 cmake ..
 make -j$(nproc)
 sudo make install
 cd ../../SymReg
-mkdir build && cd build
+mkdir build
+cd build
 cmake ..
 make -j$(nproc)
 sudo make install
@@ -55,8 +60,102 @@ ctest -V
 time ./test_symreg --gtest_filter=TestSymReg.Line
 cd ..
 pip install --break-system-packages -e .
+```
+
+### Windows with MSYS2 UCRT64
+
+In MSYS2 UCRT64 prompt:
+```
+pacman -Syu
+pacman -Sy git
+pacman -Sy mingw-w64-ucrt-x86_64-cmake
+pacman -Sy mingw-w64-ucrt-x86_64-ninja
+pacman -Sy mingw-w64-ucrt-x86_64-toolchain base-devel
+pacman -Sy mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-gdb
+pacman -Sy mingw-w64-ucrt-x86_64-boost
+pacman -Sy mingw-w64-ucrt-x86_64-qt6
+pacman -Sy mingw-w64-ucrt-x86_64-armadillo
+pacman -Sy mingw-w64-ucrt-x86_64-ensmallen
+pacman -Sy mingw-w64-ucrt-x86_64-python mingw-w64-x86_64-pybind11
+pacman -Sy mingw-w64-ucrt-x86_64-graphviz
+pacman -Sy mingw-w64-ucrt-x86_64-mlpack
+pacman -Sy mingw-w64-ucrt-x86_64-eigen3
+pacman -Sy mingw-w64-ucrt-x86_64-ceres-solver
+pacman -Sy mingw-w64-ucrt-x86_64-blas
+pacman -Sy mingw-w64-ucrt-x86_64-lapack
+pacman -Sy mingw-w64-ucrt-x86_64-suitesparse
+pacman -Sy mingw-w64-ucrt-x86_64-python-pip
+pacman -Sy mingw-w64-ucrt-x86_64-python-pytest
+pacman -Sy mingw-w64-ucrt-x86_64-python-numpy
+pacman -Sy mingw-w64-ucrt-x86_64-python-sympy
+cd ~
+mkdir symreg_ws
+cd symreg_ws
+git clone https://github.com/DrTimothyAldenDavis/SuiteSparse.git
+cd SuiteSparse
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=/ucrt64 -DBLAS_LIBRARIES=/ucrt64/lib/libblas.dll.a -DLAPACK_LIBRARIES=/ucrt64/lib/liblapack.dll.a ..
+ninja -j$(nproc)
+ninja install
+cd ../..
+git clone https://github.com/mlpack/mlpack.git
+cd mlpack
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=/ucrt64 ..
+ninja -j$(nproc)
+ninja install
+cd ../..
+git clone https://github.com/Julien-Livet/SymReg.git
+git clone https://github.com/Julien-Livet/Sym.git
+cd Sym
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=/ucrt64 ..
+ninja -j$(nproc)
+ninja install
+cd ../../SymReg
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=/ucrt64 -DBLAS_LIBRARIES=/ucrt64/lib/libblas.dll.a -DLAPACK_LIBRARIES=/ucrt64/lib/liblapack.dll.a -Dpybind11_DIR=/d/Programmes/Python/Python312/Lib/site-packages/pybind11/share/cmake/pybind11 ..
+ninja -j$(nproc)
+ninja install
+cd ..
+mkdir symreg
+cp build/*pyd symreg
+pip install --break-system-packages -e .
 cd scripts
 pytest -s test_symreg.py
+```
+
+Copy following DLL files from MSYS2 UCRT64 bin folder to launch executables from Windows Explorer:
+libarmadillo.dll
+libopenblas.dll
+libblas.dll
+libceres-4.dll
+libcurl-4.dll
+libgcc_s_seh-1.dll
+libglog-2.dll
+libgvc-6.dll
+libstdc++-6.dll
+libwinpthread-1.dll
+Qt6Charts.dll
+Qt6Core.dll
+Qt6Gui.dll
+Qt6OpenGL.dll
+Qt6Svg.dll
+Qt6Widgets.dll
+zlib1.dll
+
+In CMD prompt:
+```
+D:
+cd D:\Programmes\msys64\home\Julien\symreg_ws\SymReg\build
+benchmark.exe 0
+primes_demo.exe
+ctest -V
+test_symreg.exe --gtest_filter=TestSymReg.Line
 ```
 
 # Benchmark with 0% of noise
