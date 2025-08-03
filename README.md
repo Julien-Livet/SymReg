@@ -76,7 +76,8 @@ pacman -Sy mingw-w64-ucrt-x86_64-boost
 pacman -Sy mingw-w64-ucrt-x86_64-qt6
 pacman -Sy mingw-w64-ucrt-x86_64-armadillo
 pacman -Sy mingw-w64-ucrt-x86_64-ensmallen
-pacman -Sy mingw-w64-ucrt-x86_64-python mingw-w64-x86_64-pybind11
+pacman -Sy mingw-w64-ucrt-x86_64-python
+pacman -Sy mingw-w64-ucrt-x86_64-pybind11
 pacman -Sy mingw-w64-ucrt-x86_64-graphviz
 pacman -Sy mingw-w64-ucrt-x86_64-mlpack
 pacman -Sy mingw-w64-ucrt-x86_64-eigen3
@@ -87,7 +88,6 @@ pacman -Sy mingw-w64-ucrt-x86_64-suitesparse
 pacman -Sy mingw-w64-ucrt-x86_64-python-pip
 pacman -Sy mingw-w64-ucrt-x86_64-python-pytest
 pacman -Sy mingw-w64-ucrt-x86_64-python-numpy
-pacman -Sy mingw-w64-ucrt-x86_64-python-sympy
 cd ~
 mkdir symreg_ws
 cd symreg_ws
@@ -118,7 +118,7 @@ ninja install
 cd ../../SymReg
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=/ucrt64 -DBLAS_LIBRARIES=/ucrt64/lib/libblas.dll.a -DLAPACK_LIBRARIES=/ucrt64/lib/liblapack.dll.a -Dpybind11_DIR=/d/Programmes/Python/Python312/Lib/site-packages/pybind11/share/cmake/pybind11 ..
+cmake -DCMAKE_INSTALL_PREFIX=/ucrt64 -DBLAS_LIBRARIES=/ucrt64/lib/libblas.dll.a -DLAPACK_LIBRARIES=/ucrt64/lib/liblapack.dll.a -DPython3_EXECUTABLE=/ucrt64/bin/python -DPython3_LIBRARY=/ucrt64/lib/libpython3.12.dll.a -DPython3_INCLUDE_DIR=/ucrt64/include/python3.12 ..
 ninja -j$(nproc)
 ninja install
 cd ..
