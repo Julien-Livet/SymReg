@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core", "pybind11", "setuptools", "wheel"]
+requires = ["scikit-build-core", "pybind11", "setuptools", "wheel", "conan"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -25,3 +25,5 @@ Homepage = "https://github.com/Julien-Livet/SymReg"
 wheel.packages = ["symreg"]
 cmake.minimum-version = "3.15"
 sdist.include = ["src", "CMakeLists.txt", "pyproject.toml", "README.md"]
+build-dir = "build"
+cmake.verbose = true
