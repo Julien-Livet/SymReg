@@ -27,10 +27,10 @@ namespace sr
         std::string tooltip;
         std::vector<Node*> children;
         
-        Node(std::string const& label,
-             std::string const& color,
-             std::string const& tooltip,
-             std::vector<Node*> const& children) : label{label}, color{color}, tooltip{tooltip}, children{children}
+        Node(std::string const& label = std::string{},
+             std::string const& color = std::string{},
+             std::string const& tooltip = std::string{},
+             std::vector<Node*> const& children = std::vector<Node*>{}) : label{label}, color{color}, tooltip{tooltip}, children{children}
         {
         }
     };
