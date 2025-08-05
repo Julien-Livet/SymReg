@@ -26,6 +26,13 @@ namespace sr
         std::string color;
         std::string tooltip;
         std::vector<Node*> children;
+        
+        Node(std::string const& label,
+             std::string const& color,
+             std::string const& tooltip,
+             std::vector<Node*> const& children) : label{label}, color{color}, tooltip{tooltip}, children{children}
+        {
+        }
     };
 
     void freeDot(Node* node)

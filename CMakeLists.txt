@@ -34,8 +34,6 @@ include_directories(include)
 
 add_compile_definitions(EIGEN_NO_DEBUG)
 
-set(CMAKE_AUTOMOC ON)
-
 add_definitions(-DPYBIND11_DETAILED_ERROR_MESSAGES)
 pybind11_add_module(symreg src/python_bindings.cpp)
 
@@ -47,6 +45,8 @@ endif()
 
 if(NOT ONLY_PYBIND)
     find_package(Qt6 REQUIRED COMPONENTS Widgets Charts Svg)
+
+    set(CMAKE_AUTOMOC ON)
 
     FetchContent_Declare(
       googletest
