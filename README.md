@@ -40,14 +40,6 @@ cd build
 cmake .. -DBUILD_TESTING=OFF
 make -j$(nproc)
 sudo make install
-cd ../..
-git clone https://github.com/Julien-Livet/Sym.git
-cd Sym
-mkdir build
-cd build
-cmake ..
-make -j$(nproc)
-sudo make install
 cd ../../SymReg
 mkdir build
 cd build

@@ -1,0 +1,48 @@
+name: Build wheels
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install cibuildwheel
+        run: pip install cibuildwheel
+
+      - name: Install conan
+        run: pip install conan
+     
+      - name: Conan install
+        run: |
+          conan profile detect --force
+          conan install . --output-folder=build --build=missing
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.16.2
+        env:
+          CMAKE_TOOLCHAIN_FILE: ${{ github.workspace }}/build/conan_toolchain.cmake
+          CMAKE_ARGS: '-DONLY_PYBIND=ON'
+        with:
+          output-dir: dist
+            
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist

@@ -12,9 +12,6 @@
 
 #include <ceres/ceres.h>
 
-#define ARMA_DONT_PRINT_FAST_MATH_WARNING
-#include <mlpack/methods/kmeans/kmeans.hpp>
-
 #include <pybind11/embed.h>
 
 #include "SymReg/BinaryOperator.h"
