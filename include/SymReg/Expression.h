@@ -773,9 +773,10 @@ namespace sr
                         Eigen::Array<T, Eigen::Dynamic, 1> param;
                         std::vector<Eigen::Array<T, Eigen::Dynamic, 1> > directions;
                         
-                        Cell(T const& cost,
-                             Eigen::Array<T, Eigen::Dynamic, 1> const& param,
-                             std::vector<Eigen::Array<T, Eigen::Dynamic, 1> > const& directions) : cost{cost}, param{param}, directions{directions}
+                        Cell(T const& cost = T{0},
+                             Eigen::Array<T, Eigen::Dynamic, 1> const& param = Eigen::Array<T, Eigen::Dynamic, 1>{},
+                             std::vector<Eigen::Array<T, Eigen::Dynamic, 1> > const& directions = std::vector<Eigen::Array<T, Eigen::Dynamic, 1> >{})
+                            : cost{cost}, param{param}, directions{directions}
                         {
                         }
                     };
