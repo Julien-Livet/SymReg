@@ -7,7 +7,6 @@ set(CMAKE_BUILD_TYPE Release)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   add_compile_options(
-    -march=native
 #    -O3 -ffast-math -DNDEBUG
 #    -fsanitize=address,undefined -g -O1
   )
