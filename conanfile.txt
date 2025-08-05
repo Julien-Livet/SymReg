@@ -17,3 +17,5 @@ libcurl/8.6.0:with_ssl=openssl
 libcurl/8.6.0:with_zlib=True
 libcurl/8.6.0:shared=False
 boost/1.84.0:shared=False
+boost/1.84.0:header_only=False
+boost/1.84.0:without_log=False
