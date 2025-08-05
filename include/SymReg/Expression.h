@@ -26,8 +26,8 @@ namespace sr
         std::string color;
         std::string tooltip;
         std::vector<Node*> children;
-        
-        Node(std::string const& label = std::string{},
+
+        Node(std::string const& label,
              std::string const& color = std::string{},
              std::string const& tooltip = std::string{},
              std::vector<Node*> const& children = std::vector<Node*>{}) : label{label}, color{color}, tooltip{tooltip}, children{children}
@@ -772,6 +772,12 @@ namespace sr
                         T cost;
                         Eigen::Array<T, Eigen::Dynamic, 1> param;
                         std::vector<Eigen::Array<T, Eigen::Dynamic, 1> > directions;
+                        
+                        Cell(T const& cost,
+                             Eigen::Array<T, Eigen::Dynamic, 1> const& param,
+                             std::vector<Eigen::Array<T, Eigen::Dynamic, 1> > const& directions) : cost{cost}, param{param}, directions{directions}
+                        {
+                        }
                     };
 
                     std::set<Eigen::Array<T, Eigen::Dynamic, 1>, EigenArrayLess<T> > visitedCells;
