@@ -3,7 +3,7 @@ requires = ["scikit-build-core", "pybind11", "setuptools", "wheel"]
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "symreg"
+name = "symregpy"
 version = "0.1.0"
 description = "Symbolic regression library with Python bindings"
 authors = [
