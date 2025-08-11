@@ -25,7 +25,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Sym)
 
 find_package(Ceres REQUIRED)
-find_package(CURL REQUIRED)
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 REQUIRED)
 find_package(Boost REQUIRED)
@@ -46,6 +45,7 @@ endif()
 install(TARGETS symreg LIBRARY DESTINATION .)
 
 if(NOT ONLY_PYBIND)
+    find_package(CURL REQUIRED)
     find_package(Qt6 REQUIRED COMPONENTS Widgets Charts Svg)
 
     set(CMAKE_AUTOMOC ON)
