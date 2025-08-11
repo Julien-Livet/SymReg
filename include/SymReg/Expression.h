@@ -400,6 +400,11 @@ namespace sr
                 return *this;
             }
 
+            bool operator!=(Expression<T> const& other) const
+            {
+                return !operator==(other);
+            }
+
             bool operator==(Expression<T> const& other) const
             {
                 if (operatorType_ != other.operatorType_)
