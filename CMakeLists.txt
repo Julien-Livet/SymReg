@@ -44,7 +44,7 @@ endif()
 
 install(TARGETS symreg LIBRARY DESTINATION .)
 
-if(NOT ONLY_PYBIND)
+if (NOT ONLY_PYBIND)
     find_package(CURL REQUIRED)
     find_package(Qt6 REQUIRED COMPONENTS Widgets Charts Svg)
 
