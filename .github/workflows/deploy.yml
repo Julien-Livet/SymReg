@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -21,28 +21,25 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          architecture: "x64"
 
       - name: Install cibuildwheel
         run: pip install cibuildwheel
 
-      - name: Install conan
-        run: pip install conan
-     
-      - name: Conan install
-        run: |
-          conan profile detect --force
-          conan install . --output-folder=build --build=missing
-
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16.2
+        run: |
+          cibuildwheel --output-dir dist
         env:
-          CMAKE_TOOLCHAIN_FILE: ${{ github.workspace }}/build/conan_toolchain.cmake
-          CMAKE_ARGS: '-DONLY_PYBIND=ON'
-        with:
-          output-dir: dist
+          CIBW_ARCHS_MACOS: x86_64
+          CIBW_BEFORE_BUILD: >
+            pip install conan && conan profile detect --force && conan install . --output-folder=build --build=missing &&
+            cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
+          CIBW_SKIP: "pp* *-win32 *-manylinux_i686 *-musllinux_i686 *-macosx_10_*-x86_64"
+          CIBW_ENVIRONMENT: >
+            CMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake
             
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: dist
+          name: dist-${{ matrix.os }}
           path: dist
