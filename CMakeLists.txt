@@ -12,7 +12,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   )
 endif()
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FetchContent)
@@ -42,6 +42,8 @@ if (WIN32)
 else()
     target_link_libraries(symreg PRIVATE Ceres::ceres Sym Boost::headers)
 endif()
+
+install(TARGETS symreg LIBRARY DESTINATION .)
 
 if(NOT ONLY_PYBIND)
     find_package(Qt6 REQUIRED COMPONENTS Widgets Charts Svg)
