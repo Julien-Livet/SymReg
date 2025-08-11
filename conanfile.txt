@@ -2,7 +2,6 @@
 ceres-solver/2.1.0
 eigen/3.4.0
 zlib/1.2.13
-libcurl/8.6.0
 pybind11/2.12.0
 boost/1.84.0
 
@@ -13,8 +12,5 @@ CMakeDeps
 [options]
 ceres-solver/2.1.0:shared=False
 ceres-solver/2.1.0:use_glog=False
-libcurl/8.6.0:with_ssl=openssl
-libcurl/8.6.0:with_zlib=True
-libcurl/8.6.0:shared=False
 boost/1.84.0:shared=False
 boost/1.84.0:header_only=True
