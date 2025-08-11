@@ -21,6 +21,7 @@ FetchContent_Declare(
   Sym
   GIT_REPOSITORY https://github.com/Julien-Livet/Sym.git
   GIT_TAG main
+  SOURCE_SUBDIR .
 )
 FetchContent_MakeAvailable(Sym)
 
