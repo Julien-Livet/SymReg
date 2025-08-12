@@ -26,7 +26,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Sym)
 
 find_package(Ceres REQUIRED)
-find_package(Python3 REQUIRED COMPONENTS Interpreter Development HINTS ENV{Python3_EXECUTABLE})
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11 REQUIRED)
 find_package(Boost REQUIRED)
 
