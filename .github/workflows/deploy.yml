@@ -23,10 +23,6 @@ jobs:
           python-version: "3.12"
           architecture: "x64"
           
-      - name: Set Python3_ROOT_DIR
-        run: |
-          echo "Python3_ROOT_DIR=$(python -c 'import sys; print(sys.prefix)')" >> $GITHUB_ENV
-          
       - name: Ensure Python development headers are present
         run: |
           python -m pip install --upgrade pip
@@ -44,7 +40,7 @@ jobs:
           CIBW_ARCHS_MACOS: x86_64
           CIBW_BEFORE_BUILD: >
             pip install conan && conan profile detect --force && conan install . --output-folder=build --build=missing &&
-            cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DONLY_PYBIND=ON -DPython3_EXECUTABLE="${{ env.pythonLocation }}/python" -DPython3_ROOT_DIR=${{ env.Python3_ROOT_DIR }}
+            cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DONLY_PYBIND=ON -DPython3_EXECUTABLE="${{ env.pythonLocation }}/python" -DPython3_ROOT_DIR="${{ env.pythonLocation }}
           CIBW_SKIP: "pp* *-win32 *-manylinux_i686 *-musllinux_i686 *-macosx_10_*-x86_64"
           CIBW_ENVIRONMENT: >
             CMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake
