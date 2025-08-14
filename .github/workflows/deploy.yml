@@ -39,7 +39,7 @@ jobs:
             yum install -y python3-devel
           CIBW_ARCHS_MACOS: x86_64
           CIBW_BEFORE_BUILD: >
-            pip install conan && conan profile detect --force && conan install . --output-folder=build --build=missing && cmake -G "Unix Makefiles" . &&
+            pip install conan && conan profile detect --force && conan install . --output-folder=build --build=missing &&
             cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DONLY_PYBIND=ON -DPython3_EXECUTABLE="${{ env.pythonLocation }}/python" -DPython3_ROOT_DIR="${{ env.pythonLocation }}"
           CIBW_SKIP: "pp* *-win32 *-manylinux_i686 *-musllinux_i686 *-macosx_10_*-x86_64"
           CIBW_ENVIRONMENT: >
