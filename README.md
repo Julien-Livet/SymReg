@@ -28,7 +28,7 @@ It is possible to call user callback during process with ```callback```.
 ```
 sudo apt update
 sudo apt install -y cmake make git libcurl4-openssl-dev libboost-dev libqt6charts6-dev libmlpack-dev libensmallen-dev libarmadillo-dev libstb-dev pybind11-dev graphviz libgraphviz-dev libqt6svg6-dev build-essential python3-sympy
-sudo apt install -y libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev
+sudo apt install -y libgoogle-glog-dev libeigen3-dev libsuitesparse-dev
 cd ~
 mkdir symreg_ws
 cd symreg_ws
