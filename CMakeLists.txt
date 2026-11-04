@@ -26,7 +26,11 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Sym)
 
 find_package(Ceres REQUIRED)
-find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+if (ONLY_PYBIND)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
+else()
+    find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+endif()
 find_package(pybind11 REQUIRED)
 find_package(Boost REQUIRED)
 
@@ -43,7 +47,7 @@ else()
     target_link_libraries(symreg PRIVATE Ceres::ceres Sym Boost::headers)
 endif()
 
-install(TARGETS symreg LIBRARY DESTINATION .)
+install(TARGETS symreg DESTINATION symreg COMPONENT python)
 
 if (NOT ONLY_PYBIND)
     find_package(CURL REQUIRED)
