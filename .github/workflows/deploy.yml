@@ -11,6 +11,7 @@ jobs:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
 
@@ -29,14 +30,12 @@ jobs:
           python -m pip install setuptools wheel
         
       - name: Install cibuildwheel
-        run: pip install cibuildwheel==2.20.0
+        run: pip install cibuildwheel==3.4.0
 
       - name: Build wheels
         run: |
           cibuildwheel --output-dir dist
         env:
-          CIBW_BEFORE_ALL_LINUX: >
-            yum install -y python3-devel
           CIBW_ARCHS_MACOS: x86_64
           CIBW_SKIP: "pp* *-win32 *-manylinux_i686 *-musllinux_i686 *-macosx_10_*-x86_64"
 
