@@ -208,3 +208,5 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+*build
